@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<title>FinanceControl • Fatura</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0b1020; --panel:#0f1730; --card:#101a36;
+  --line:rgba(255,255,255,.08);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.55);
+  --accent:#6d7cff;
+  --good:#29d17d; --bad:#ff4d6d;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Inter,system-ui;
+  background:var(--bg);color:var(--text)
+}
+.app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+.sidebar{
+  padding:20px;border-right:1px solid var(--line)
+}
+.brand{font-weight:700;font-size:16px;margin-bottom:20px}
+.nav button{
+  width:100%;margin-bottom:8px;
+  padding:12px;border-radius:12px;
+  border:0;background:transparent;color:var(--muted);
+  text-align:left;cursor:pointer
+}
+.nav button.active{
+  background:rgba(109,124,255,.2);
+  color:#fff
+}
+.main{padding:20px;overflow:auto}
+
+.top{
+  display:flex;gap:10px;align-items:center;
+  justify-content:space-between;flex-wrap:wrap
+}
+
+select,button,input{
+  background:#111;border:1px solid var(--line);
+  color:#fff;border-radius:12px;
+  padding:10px
+}
+
+.cards{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;margin:16px 0
+}
+.card{
+  background:var(--card);
+  padding:14px;border-radius:var(--radius)
+}
+.label{color:var(--muted);font-size:13px}
+.value{font-size:22px;font-weight:700;margin-top:6px}
+.good{color:var(--good)}
+.bad{color:var(--bad)}
+
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{
+  padding:10px;border-bottom:1px solid var(--line);
+  font-size:13px;text-align:left
+}
+.actions button{
+  margin-right:6px;
+  font-size:12px;
+}
+
+.empty{
+  text-align:center;color:var(--muted);
+  padding:40px 0
+}
+
+.modalWrap{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;place-items:center
+}
+.modal{
+  background:#111;padding:16px;
+  border-radius:18px;width:100%;
+  max-width:520px
+}
+.modal h3{margin-top:0}
+.form{display:grid;gap:10px}
+.actionsRow{display:flex;gap:10px;justify-content:flex-end}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="brand">FinanceControl</div>
+  <div class="nav">
+    <button class="active">Fatura</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="top">
+    <select id="faturaSel"></select>
+    <button id="addBtn">+ Lançamento</button>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">Total da Fatura</div>
+      <div class="value bad" id="totalFatura">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <div class="label">Salário</div>
+      <div class="value good" id="salario">R$ 3.450,00</div>
+    </div>
+    <div class="card">
+      <div class="label">Saldo após pagamento</div>
+      <div class="value" id="saldo">R$ 3.450,00</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Descrição</th>
+        <th>Categoria</th>
+        <th>Parcela</th>
+        <th>Valor</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="txTable"></tbody>
+  </table>
+
+  <div id="empty" class="empty" style="display:none">
+    Nenhuma despesa lançada nesta fatura.
+  </div>
+</main>
+</div>
+
+<!-- MODAL -->
+<div class="modalWrap" id="modalWrap">
+<div class="modal">
+<h3 id="modalTitle">Novo lançamento</h3>
+<div class="form">
+<input id="desc" placeholder="Descrição">
+<input id="valor" type="number" placeholder="Valor total">
+<input id="parcelas" type="number" placeholder="Parcelas (ex: 12)">
+<input id="data" type="date">
+<div class="actionsRow">
+  <button onclick="closeModal()">Cancelar</button>
+  <button id="saveTx">Salvar</button>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const CLOSE_DAY = 16;
+const LS_KEY = 'finance_fatura_v1';
+
+const money = n => (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const save = d => localStorage.setItem(LS_KEY,JSON.stringify(d));
+const load = () => JSON.parse(localStorage.getItem(LS_KEY));
+
+let state = load() || { salary:3450, tx:[] };
+save(state);
+
+const faturaSel = document.getElementById('faturaSel');
+const txTable = document.getElementById('txTable');
+const totalFatura = document.getElementById('totalFatura');
+const salarioEl = document.getElementById('salario');
+const saldoEl = document.getElementById('saldo');
+const emptyEl = document.getElementById('empty');
+
+const modalWrap = document.getElementById('modalWrap');
+const desc = document.getElementById('desc');
+const valor = document.getElementById('valor');
+const parcelas = document.getElementById('parcelas');
+const dataInput = document.getElementById('data');
+const modalTitle = document.getElementById('modalTitle');
+
+let editPurchaseId = null;
+
+function getFaturaKey(date){
+  const d = new Date(date);
+  if(d.getDate()>CLOSE_DAY) d.setMonth(d.getMonth()+1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function buildFaturas(){
+  const set = new Set(state.tx.map(t=>t.fatura));
+  if(set.size===0) set.add(getFaturaKey(new Date()));
+  faturaSel.innerHTML=[...set].sort().map(f=>{
+    const [y,m]=f.split('-');
+    return `<option value="${f}">${m}/${y}</option>`;
+  }).join('');
+}
+
+function render(){
+  buildFaturas();
+  const f = faturaSel.value;
+  const list = state.tx.filter(t=>t.fatura===f);
+
+  txTable.innerHTML='';
+  let total=0;
+
+  if(list.length===0){
+    emptyEl.style.display='block';
+  }else{
+    emptyEl.style.display='none';
+    list.forEach(t=>{
+      total+=t.amount;
+      txTable.innerHTML+=`
+      <tr>
+        <td>${t.desc}</td>
+        <td>Cartão</td>
+        <td>${t.parcela}</td>
+        <td class="bad">${money(t.amount)}</td>
+        <td class="actions">
+          <button class="editBtn" data-id="${t.purchaseId}">Editar</button>
+          <button class="delBtn" data-id="${t.purchaseId}">Excluir</button>
+        </td>
+      </tr>`;
+    });
+  }
+
+  totalFatura.textContent = money(total);
+  salarioEl.textContent = money(state.salary);
+  saldoEl.textContent = money(state.salary - total);
+}
+
+txTable.addEventListener('click', (e)=>{
+  const id = e.target.dataset.id;
+  if(!id) return;
+
+  if(e.target.classList.contains('delBtn')){
+    if(!confirm('Excluir TODAS as parcelas dessa compra?')) return;
+    state.tx = state.tx.filter(t=>t.purchaseId!==id);
+    save(state); render();
+  }
+
+  if(e.target.classList.contains('editBtn')){
+    openModal(id);
+  }
+});
+
+document.getElementById('addBtn').onclick=()=>openModal();
+
+function openModal(purchaseId=null){
+  modalWrap.style.display='grid';
+  editPurchaseId = purchaseId;
+
+  if(purchaseId){
+    const base = state.tx.find(t=>t.purchaseId===purchaseId && t.parcela.startsWith('1/'));
+    modalTitle.textContent='Editar compra';
+    desc.value = base.desc;
+    const totalParc = Number(base.parcela.split('/')[1]);
+    valor.value = base.amount * totalParc;
+    parcelas.value = totalParc;
+    dataInput.value = new Date().toISOString().slice(0,10);
+  }else{
+    modalTitle.textContent='Novo lançamento';
+    desc.value=''; valor.value=''; parcelas.value='';
+    dataInput.value=new Date().toISOString().slice(0,10);
+  }
+}
+
+function closeModal(){
+  modalWrap.style.display='none';
+  editPurchaseId=null;
+}
+
+document.getElementById('saveTx').onclick=()=>{
+  const dsc = desc.value.trim();
+  const val = Number(valor.value);
+  const parc = Number(parcelas.value||1);
+  const dt = dataInput.value;
+
+  if(!dsc || !val || !dt){
+    alert('Preencha todos os campos.');
+    return;
+  }
+
+  if(editPurchaseId){
+    state.tx = state.tx.filter(t=>t.purchaseId!==editPurchaseId);
+  }
+
+  const pid = editPurchaseId || crypto.randomUUID();
+  const parcVal = val/parc;
+
+  for(let i=0;i<parc;i++){
+    const d=new Date(dt);
+    d.setMonth(d.getMonth()+i);
+    state.tx.push({
+      purchaseId: pid,
+      desc: dsc,
+      parcela:`${i+1}/${parc}`,
+      amount: parcVal,
+      fatura:getFaturaKey(d)
+    });
+  }
+
+  save(state);
+  closeModal();
+  render();
+};
+
+buildFaturas();
+render();
+</script>
+</body>
+</html>
