@@ -1,274 +1,1206 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<title>FinanceControl • Fatura</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FinanceControl</title>
 
-<style>
-:root{
-  --bg:#0b1020; --card:#101a36;
-  --line:rgba(255,255,255,.08);
-  --text:rgba(255,255,255,.92);
-  --muted:rgba(255,255,255,.55);
-  --good:#29d17d; --bad:#ff4d6d;
-  --accent:#6d7cff;
-  --radius:14px;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;font-family:Inter,system-ui;
-  background:var(--bg);color:var(--text)
-}
-.app{display:grid;grid-template-columns:220px 1fr;height:100vh}
-.sidebar{padding:20px;border-right:1px solid var(--line)}
-.brand{font-weight:700;margin-bottom:20px}
-.main{padding:20px;overflow:auto}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#0f1730; --card:#101a36;
+      --line:rgba(255,255,255,.08);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.62);
+      --muted2:rgba(255,255,255,.40);
+      --accent:#6d7cff; --accent2:#38d2ff;
+      --good:#29d17d; --bad:#ff4d6d; --warn:#ffcc66;
+      --radius:18px; --shadow:0 18px 45px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:
+        radial-gradient(1200px 800px at 15% 0%, rgba(109,124,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(56,210,255,.12), transparent 55%),
+        var(--bg);
+      color:var(--text); height:100vh; overflow:hidden;
+    }
+    .app{ display:grid; grid-template-columns:260px 1fr; height:100vh; }
+    .sidebar{
+      padding:22px 18px; border-right:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), transparent 35%);
+      position:relative;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; padding:10px 10px 18px; }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background:linear-gradient(135deg, rgba(109,124,255,.95), rgba(56,210,255,.85));
+      box-shadow:0 14px 35px rgba(109,124,255,.25);
+    }
+    .brand h1{ margin:0; font-size:15px; letter-spacing:.2px; }
+    .brand span{ display:block; font-size:12px; color:var(--muted2); margin-top:2px; }
 
-select,button,input{
-  background:#111;border:1px solid var(--line);
-  color:#fff;border-radius:10px;padding:10px
-}
+    .nav{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+    .nav button{
+      width:100%;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 12px; border:1px solid transparent;
+      background:transparent; color:var(--muted);
+      border-radius:14px; cursor:pointer; transition:.2s;
+    }
+    .nav button:hover{ background:rgba(255,255,255,.05); color:var(--text); }
+    .nav button.active{
+      background:rgba(109,124,255,.14);
+      border-color:rgba(109,124,255,.25);
+      color:var(--text);
+    }
+    .nav .left{ display:flex; align-items:center; gap:10px; }
+    .dot{ width:9px; height:9px; border-radius:99px; background:rgba(255,255,255,.22); }
+    .nav button.active .dot{ background:var(--accent); }
 
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
-.card{background:var(--card);padding:14px;border-radius:var(--radius)}
-.label{color:var(--muted);font-size:13px}
-.value{font-size:22px;font-weight:700}
-.good{color:var(--good)}
-.bad{color:var(--bad)}
+    .sidebar .footer{
+      position:absolute; bottom:18px; left:18px; right:18px;
+      padding:14px; border:1px solid var(--line);
+      border-radius:var(--radius); background:rgba(255,255,255,.03);
+    }
+    .footer .small{ color:var(--muted2); font-size:12px; }
+    .footer .row{ display:flex; justify-content:space-between; margin-top:8px; gap:8px;}
+    .pill{
+      padding:6px 10px; border-radius:999px; border:1px solid var(--line);
+      background:rgba(255,255,255,.03); font-size:12px; color:var(--muted);
+      cursor:pointer; user-select:none;
+    }
+    .pill:hover{ background:rgba(255,255,255,.06); }
 
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}
+    .main{ padding:22px 24px; overflow:auto; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:18px; flex-wrap:wrap; }
+    .title h2{ margin:0; font-size:18px; }
+    .title p{ margin:6px 0 0; color:var(--muted2); font-size:12px; }
+    .controls{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    select, input, button, textarea{ font-family:inherit; }
+    .select, .search{
+      background:rgba(255,255,255,.04); border:1px solid var(--line); color:var(--text);
+      border-radius:14px; padding:10px 12px; outline:none;
+    }
+    .search{ width:240px; }
+    .btn{
+      border:1px solid rgba(109,124,255,.35);
+      background:rgba(109,124,255,.18); color:var(--text);
+      border-radius:14px; padding:10px 12px; cursor:pointer; transition:.2s;
+    }
+    .btn:hover{ background:rgba(109,124,255,.25); }
+    .btnDanger{
+      border:1px solid rgba(255,77,109,.35);
+      background:rgba(255,77,109,.12);
+    }
+    .btnOk{
+      border:1px solid rgba(41,209,125,.35);
+      background:rgba(41,209,125,.12);
+    }
 
-button.small{font-size:12px;padding:6px 8px}
+    .cards{ display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px; }
+    .card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:14px; min-height:92px;
+    }
+    .card .label{ color:var(--muted2); font-size:12px; }
+    .card .value{ margin-top:8px; font-size:20px; font-weight:700; letter-spacing:.2px; }
+    .card .sub{ margin-top:8px; color:var(--muted); font-size:12px; display:flex; gap:8px; align-items:center; }
+    .badge{
+      padding:4px 8px; border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      font-size:12px; color:var(--muted);
+    }
 
-.modalWrap{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;place-items:center
-}
-.modal{
-  background:#111;padding:16px;
-  border-radius:16px;width:100%;
-  max-width:480px
-}
-.modal h3{margin-top:0}
-.form{display:grid;gap:10px}
-.actions{display:flex;justify-content:flex-end;gap:10px}
-.empty{text-align:center;color:var(--muted);padding:40px}
-</style>
+    .panel{
+      border:1px solid var(--line); background:rgba(255,255,255,.03);
+      border-radius:var(--radius); box-shadow:var(--shadow); padding:14px;
+    }
+    .panel h3{ margin:0 0 12px; font-size:14px; color:rgba(255,255,255,.86); }
+
+    .table{ width:100%; border-collapse:collapse; }
+    .table th,.table td{
+      text-align:left; font-size:12px; padding:10px 8px;
+      border-bottom:1px solid var(--line); color:var(--muted);
+    }
+    .table th{ color:rgba(255,255,255,.7); font-weight:600; }
+    .amt.pos{ color:var(--good); font-weight:600; }
+    .amt.neg{ color:var(--bad); font-weight:600; }
+
+    .actionsInline{ display:flex; gap:8px; justify-content:flex-end; }
+    .mini{
+      padding:7px 10px; border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.03);
+      color:var(--text); cursor:pointer;
+      font-size:12px;
+    }
+    .mini:hover{ background:rgba(255,255,255,.06); }
+
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    .modalWrap{
+      position:fixed; inset:0; display:none; place-items:center;
+      background:rgba(0,0,0,.55); padding:20px;
+    }
+    .modal{
+      width:min(680px, 100%);
+      border-radius:22px; border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(16,26,54,.98), rgba(12,18,38,.98));
+      box-shadow:0 30px 80px rgba(0,0,0,.6);
+      padding:16px;
+    }
+    .modalHeader{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .modalHeader h4{ margin:0; font-size:14px; }
+    .x{ border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted);
+      border-radius:12px; padding:8px 10px; cursor:pointer; }
+    .form{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .form label{ font-size:12px; color:var(--muted2); display:block; margin-bottom:6px; }
+    .form input,.form select,.form textarea{
+      width:100%; padding:10px 12px; border-radius:14px;
+      border:1px solid var(--line); background:rgba(255,255,255,.04);
+      color:var(--text); outline:none;
+    }
+    .form textarea{ grid-column:1/-1; min-height:80px; resize:vertical; }
+    .form .full{ grid-column:1/-1; }
+    .actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; flex-wrap:wrap; }
+    .hint{ color:var(--muted2); font-size:12px; margin-top:10px; line-height:1.5; }
+
+    .row2{display:grid; grid-template-columns:1.2fr .8fr; gap:14px;}
+    .kpis{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .kpi{ padding:12px; border-radius:16px; border:1px solid var(--line); background:rgba(255,255,255,.03); }
+    .kpi .t{ color:var(--muted2); font-size:12px; }
+    .kpi .n{ margin-top:8px; font-size:16px; font-weight:700; }
+
+    @media (max-width:1100px){
+      .row2{ grid-template-columns:1fr; }
+      .cards{ grid-template-columns:1fr; }
+      .app{ grid-template-columns:88px 1fr; }
+      .brand h1,.brand span,.nav .txt,.sidebar .footer{ display:none; }
+      .sidebar{ padding:18px 10px; }
+      .nav button{ justify-content:center; }
+      .search{ width:100%; }
+    }
+  </style>
 </head>
 
 <body>
 <div class="app">
   <aside class="sidebar">
-    <div class="brand">FinanceControl</div>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>FinanceControl</h1>
+        <span>100% no navegador</span>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="active" data-view="dash">
+        <div class="left"><span class="dot"></span><span class="txt">Dashboard</span></div><span class="txt">›</span>
+      </button>
+      <button data-view="fatura">
+        <div class="left"><span class="dot"></span><span class="txt">Fatura</span></div><span class="txt">›</span>
+      </button>
+      <button data-view="tx">
+        <div class="left"><span class="dot"></span><span class="txt">Transações</span></div><span class="txt">›</span>
+      </button>
+      <button data-view="settings">
+        <div class="left"><span class="dot"></span><span class="txt">Config</span></div><span class="txt">›</span>
+      </button>
+    </div>
+
+    <div class="footer">
+      <div class="small">Backup / Restore</div>
+      <div class="row">
+        <span class="pill" id="exportBtnSide">Exportar JSON</span>
+        <label class="pill" style="display:flex;align-items:center;gap:10px;">
+          Importar
+          <input id="importFileSide" type="file" accept="application/json" style="display:none;">
+        </label>
+      </div>
+    </div>
   </aside>
 
   <main class="main">
-    <div class="top">
-      <select id="faturaSel"></select>
-      <button id="addBtn">+ Lançamento</button>
-    </div>
+    <div class="topbar">
+      <div class="title">
+        <h2 id="hello">Visão geral</h2>
+        <p id="subtitle">Resumo</p>
+      </div>
 
-    <div class="cards">
-      <div class="card">
-        <div class="label">Total da fatura</div>
-        <div class="value bad" id="totalFatura">R$ 0,00</div>
-      </div>
-      <div class="card">
-        <div class="label">Salário</div>
-        <div class="value good" id="salario">R$ 3.450,00</div>
-      </div>
-      <div class="card">
-        <div class="label">Saldo após pagamento</div>
-        <div class="value" id="saldo">R$ 3.450,00</div>
+      <div class="controls">
+        <select id="periodSel" class="select"></select>
+        <input id="q" class="search" placeholder="Buscar..." />
+        <button class="btn" id="addBtn">+ Lançamento</button>
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Descrição</th>
-          <th>Parcela</th>
-          <th>Valor</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="txTable"></tbody>
-    </table>
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dash">
+      <section class="cards">
+        <div class="card">
+          <div class="label">Saldo do período</div>
+          <div class="value" id="saldo">R$ 0,00</div>
+          <div class="sub"><span class="badge" id="saldoPct">—</span><span>Receitas - Despesas</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Receitas</div>
+          <div class="value" id="receitas">R$ 0,00</div>
+          <div class="sub"><span class="badge" id="recCount">0 lançamentos</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Despesas</div>
+          <div class="value" id="despesas">R$ 0,00</div>
+          <div class="sub"><span class="badge" id="despCount">0 lançamentos</span></div>
+        </div>
+      </section>
 
-    <div id="empty" class="empty" style="display:none">
-      Nenhuma despesa nesta fatura.
-    </div>
+      <div class="row2">
+        <div class="panel">
+          <h3>Transações recentes</h3>
+          <table class="table" id="recentTable">
+            <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>Indicadores</h3>
+          <div class="kpis">
+            <div class="kpi"><div class="t">Maior gasto</div><div class="n" id="maxDesp">—</div></div>
+            <div class="kpi"><div class="t">% do salário gasto</div><div class="n" id="pctSal">—</div></div>
+            <div class="kpi"><div class="t">Lançamentos</div><div class="n" id="txCount">0</div></div>
+            <div class="kpi"><div class="t">Fechamento fatura</div><div class="n" id="closeInfo">Dia 16</div></div>
+          </div>
+          <p class="hint">O período do Dashboard é “mês calendário”. A aba Fatura usa “ciclo do cartão”.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FATURA -->
+    <section class="view" id="view-fatura">
+      <section class="cards">
+        <div class="card">
+          <div class="label">Total da Fatura</div>
+          <div class="value" id="fatTotal" style="color:var(--bad)">R$ 0,00</div>
+          <div class="sub"><span class="badge" id="fatCount">0 itens</span><span>Cartão • ciclo fecha dia 16</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Salário</div>
+          <div class="value" id="fatSalary" style="color:var(--good)">R$ 0,00</div>
+          <div class="sub"><span class="badge" id="fatSalaryInfo">Config</span><span>referência</span></div>
+        </div>
+        <div class="card">
+          <div class="label">Saldo após pagar fatura</div>
+          <div class="value" id="fatSaldo">R$ 0,00</div>
+          <div class="sub"><span class="badge" id="fatHint">—</span><span>salário - fatura</span></div>
+        </div>
+      </section>
+
+      <div class="panel">
+        <h3>Itens da fatura (editar / excluir)</h3>
+        <table class="table" id="fatTable">
+          <thead>
+            <tr>
+              <th>Fatura</th><th>Descrição</th><th>Categoria</th><th>Parcela</th><th>Valor</th><th style="text-align:right;">Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p class="hint">Editar/Excluir em fatura vale para a compra inteira (todas as parcelas).</p>
+      </div>
+    </section>
+
+    <!-- TRANSAÇÕES -->
+    <section class="view" id="view-tx">
+      <div class="panel">
+        <h3>Transações gerais (Pix/Débito/Dinheiro/Receitas)</h3>
+        <table class="table" id="txTable">
+          <thead>
+            <tr>
+              <th>Data</th><th>Tipo</th><th>Meio</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th style="text-align:right;">Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p class="hint">Aqui entram receitas e despesas fora do cartão. As compras no cartão aparecem na aba Fatura.</p>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="view" id="view-settings">
+      <div class="panel">
+        <h3>Configurações</h3>
+
+        <div class="form" style="margin-top:0;">
+          <div>
+            <label>Salário (referência)</label>
+            <input id="salary" type="number" step="0.01" placeholder="Ex: 3450" />
+          </div>
+          <div>
+            <label>Fechamento da fatura (dia)</label>
+            <input id="closeDay" type="number" min="1" max="28" placeholder="16" />
+          </div>
+
+          <div class="full">
+            <label>Categorias (separe por vírgula)</label>
+            <input id="catsInput" type="text" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btnOk" id="saveSettings">Salvar</button>
+          <button class="btn" id="exportBtn">Exportar JSON</button>
+          <label class="btn" style="display:inline-flex;align-items:center;gap:10px;cursor:pointer;">
+            Importar JSON
+            <input id="importFile" type="file" accept="application/json" style="display:none;">
+          </label>
+          <button class="btn btnDanger" id="resetBtn">Resetar tudo</button>
+        </div>
+
+        <p class="hint">
+          ✅ Dados ficam no navegador (localStorage). <br>
+          ✅ Atualizar o código NÃO apaga mais (mesma chave fixa + migração). <br>
+          📌 Se limpar dados do navegador, você perde — exporte backup.
+        </p>
+      </div>
+    </section>
   </main>
 </div>
 
 <!-- MODAL -->
 <div class="modalWrap" id="modalWrap">
   <div class="modal">
-    <h3 id="modalTitle">Novo lançamento</h3>
-    <div class="form">
-      <input id="desc" placeholder="Descrição">
-      <input id="valor" type="number" placeholder="Valor total">
-      <input id="parcelas" type="number" placeholder="Parcelas (ex: 12)">
-      <input id="dataCompra" type="date">
-      <div class="actions">
-        <button id="cancelBtn">Cancelar</button>
-        <button id="saveBtn">Salvar</button>
-      </div>
+    <div class="modalHeader">
+      <h4 id="modalTitle">Novo lançamento</h4>
+      <button class="x" id="closeModal">Fechar</button>
     </div>
+
+    <div class="form">
+      <div>
+        <label>Tipo</label>
+        <select id="tipo">
+          <option value="income">Receita</option>
+          <option value="expense">Despesa</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Meio</label>
+        <select id="meio">
+          <option value="cash">Dinheiro/Pix</option>
+          <option value="debit">Débito</option>
+          <option value="card">Cartão (vai pra Fatura)</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Data</label>
+        <input id="data" type="date" />
+      </div>
+
+      <div>
+        <label>Categoria</label>
+        <select id="cat"></select>
+      </div>
+
+      <div>
+        <label>Valor total (R$)</label>
+        <input id="valor" type="number" step="0.01" placeholder="0,00" />
+      </div>
+
+      <div id="parcelWrap">
+        <label>Parcelas (somente cartão)</label>
+        <input id="parcelas" type="number" min="1" max="60" placeholder="Ex: 12" />
+      </div>
+
+      <div class="full">
+        <label>Descrição</label>
+        <input id="desc" type="text" placeholder="Ex: Mercado, salário..." />
+      </div>
+
+      <textarea id="obs" placeholder="Obs (opcional)"></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btnOk" id="saveTx">Salvar</button>
+    </div>
+
+    <p class="hint">
+      💡 Cartão + parcelado: cria as parcelas automaticamente nas próximas faturas (fechamento dia 16).
+    </p>
   </div>
 </div>
 
 <script>
-const CLOSE_DAY = 16;
-const LS_KEY = 'finance_fatura_ok';
+/* ==========================
+   STORAGE (chave fixa + migração)
+========================== */
+const LS_KEY = 'FINANCECONTROL_STABLE_V1'; // NÃO mude mais
+const OLD_KEYS = ['financeControl_v2','finance_fatura_v1','finance_fatura_ok','finance_fatura_v1']; // tenta migrar
 
-const money = n => (n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const save = d => localStorage.setItem(LS_KEY,JSON.stringify(d));
-const load = () => JSON.parse(localStorage.getItem(LS_KEY));
+const load = () => JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+const save = (data) => localStorage.setItem(LS_KEY, JSON.stringify(data));
 
-let state = load() || { salary:3450, tx:[] };
-save(state);
-
-const faturaSel = document.getElementById('faturaSel');
-const txTable = document.getElementById('txTable');
-const totalFatura = document.getElementById('totalFatura');
-const salarioEl = document.getElementById('salario');
-const saldoEl = document.getElementById('saldo');
-const emptyEl = document.getElementById('empty');
-
-const modal = document.getElementById('modalWrap');
-const desc = document.getElementById('desc');
-const valor = document.getElementById('valor');
-const parcelas = document.getElementById('parcelas');
-const dataCompra = document.getElementById('dataCompra');
-const modalTitle = document.getElementById('modalTitle');
-
-let editingId = null;
-
-function faturaKey(date){
-  const d = new Date(date);
-  if(d.getDate() > CLOSE_DAY) d.setMonth(d.getMonth()+1);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+function defaultData(){
+  return {
+    settings: { salary: 3450, closeDay: 16 },
+    categories: ['Moradia','Alimentação','Transporte','Saúde','Lazer','Cartão','Assinaturas','Outros'],
+    tx: [], // lista de lançamentos “atômicos” (parcelas viram várias linhas com mesmo purchaseId)
+    ui: { view:'dash', periodKey: new Date().toISOString().slice(0,7), mode:'month' } // mode: month | fatura
+  };
 }
 
-function buildFaturas(){
-  const set = new Set(state.tx.map(t=>t.fatura));
-  if(set.size===0) set.add(faturaKey(new Date()));
-  faturaSel.innerHTML=[...set].sort().map(f=>{
-    const [y,m]=f.split('-');
-    return `<option value="${f}">${m}/${y}</option>`;
-  }).join('');
-}
+function migrateIfNeeded(){
+  const already = load();
+  if(already) return already;
 
-function render(){
-  buildFaturas();
-  const f = faturaSel.value;
-  const list = state.tx.filter(t=>t.fatura===f);
+  for(const k of OLD_KEYS){
+    const old = JSON.parse(localStorage.getItem(k) || 'null');
+    if(!old) continue;
 
-  txTable.innerHTML='';
-  let total=0;
+    // Caso mais comum: seu financeControl_v2 (estrutura settings/categories/tx/ui)
+    if(old.settings && Array.isArray(old.categories) && Array.isArray(old.tx)){
+      const migrated = defaultData();
+      migrated.settings.salary = Number(old.settings.salary || 3450);
+      migrated.settings.closeDay = 16;
+      migrated.categories = old.categories.length ? old.categories : migrated.categories;
 
-  if(list.length===0){
-    emptyEl.style.display='block';
-  }else{
-    emptyEl.style.display='none';
-    list.forEach(t=>{
-      total+=t.amount;
-      txTable.innerHTML+=`
-      <tr>
-        <td>${t.desc}</td>
-        <td>${t.parcela}</td>
-        <td class="bad">${money(t.amount)}</td>
-        <td>
-          <button class="small edit" data-id="${t.purchaseId}">Editar</button>
-          <button class="small del" data-id="${t.purchaseId}">Excluir</button>
-        </td>
-      </tr>`;
-    });
+      // converte tx antigas: assume que eram income/expense e não tinham meio; vira "cash"
+      migrated.tx = old.tx.map(t => ({
+        id: t.id || crypto.randomUUID(),
+        purchaseId: t.purchaseId || null,
+        type: t.type || 'expense',
+        pay: t.pay || 'cash',
+        date: t.date,
+        category: t.category || 'Outros',
+        amount: Number(t.amount || 0),
+        description: t.description || '',
+        note: t.note || '',
+        installment: t.installment || null,        // {i,n} opcional
+        periodKey: t.periodKey || t.date?.slice(0,7) || migrated.ui.periodKey,
+        faturaKey: t.faturaKey || null
+      }));
+
+      save(migrated);
+      return migrated;
+    }
+
+    // Caso ultra simples (as versões de fatura)
+    if(old.salary && Array.isArray(old.tx)){
+      const migrated = defaultData();
+      migrated.settings.salary = Number(old.salary || 3450);
+      migrated.tx = old.tx.map(t => ({
+        id: crypto.randomUUID(),
+        purchaseId: t.purchaseId || crypto.randomUUID(),
+        type: 'expense',
+        pay: 'card',
+        date: new Date().toISOString().slice(0,10),
+        category: 'Cartão',
+        amount: Number(t.amount || 0),
+        description: t.desc || '',
+        note: '',
+        installment: parseInstallment(t.parcela),
+        periodKey: t.fatura || new Date().toISOString().slice(0,7),
+        faturaKey: t.fatura || new Date().toISOString().slice(0,7)
+      }));
+      save(migrated);
+      return migrated;
+    }
   }
 
-  totalFatura.textContent = money(total);
-  salarioEl.textContent = money(state.salary);
-  saldoEl.textContent = money(state.salary - total);
+  const fresh = defaultData();
+  save(fresh);
+  return fresh;
 }
 
-document.getElementById('addBtn').onclick=()=>{
-  modal.style.display='grid';
-  modalTitle.textContent='Novo lançamento';
-  desc.value=''; valor.value=''; parcelas.value='';
-  dataCompra.value=new Date().toISOString().slice(0,10);
-  editingId=null;
+/* ==========================
+   UTILS
+========================== */
+const money = (n) => (n||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+const pad2 = (n) => String(n).padStart(2,'0');
+const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const monthKey = (dateStr) => dateStr.slice(0,7);
+
+function parseInstallment(s){
+  if(!s || typeof s!=='string' || !s.includes('/')) return null;
+  const [a,b]=s.split('/');
+  const i=Number(a), n=Number(b);
+  if(!i||!n) return null;
+  return {i,n};
+}
+
+function computeFaturaKey(dateStr, closeDay){
+  const d = new Date(dateStr + 'T12:00:00');
+  if(d.getDate() > closeDay) d.setMonth(d.getMonth()+1);
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+}
+
+function sortPeriodLabels(keys){
+  return [...keys].sort((a,b)=>a.localeCompare(b));
+}
+
+function labelMMYYYY(key){
+  const [y,m]=key.split('-');
+  return `${m}/${y}`;
+}
+
+/* ==========================
+   STATE
+========================== */
+let state = migrateIfNeeded();
+save(state);
+
+/* ==========================
+   ELEMENTS
+========================== */
+const periodSel = document.getElementById('periodSel');
+const q = document.getElementById('q');
+const addBtn = document.getElementById('addBtn');
+
+const views = {
+  dash: document.getElementById('view-dash'),
+  fatura: document.getElementById('view-fatura'),
+  tx: document.getElementById('view-tx'),
+  settings: document.getElementById('view-settings'),
 };
+const navBtns = document.querySelectorAll('.nav button');
 
-document.getElementById('cancelBtn').onclick=()=>modal.style.display='none';
+const hello = document.getElementById('hello');
+const subtitle = document.getElementById('subtitle');
 
-document.getElementById('saveBtn').onclick=()=>{
-  const dsc=desc.value.trim();
-  const val=Number(valor.value);
-  const parc=Number(parcelas.value||1);
-  const date=dataCompra.value;
+const modalWrap = document.getElementById('modalWrap');
+const closeModal = document.getElementById('closeModal');
+const modalTitle = document.getElementById('modalTitle');
 
-  if(!dsc || !val || !date){
-    alert('Preencha todos os campos.');
+const tipo = document.getElementById('tipo');
+const meio = document.getElementById('meio');
+const data = document.getElementById('data');
+const cat = document.getElementById('cat');
+const valor = document.getElementById('valor');
+const parcelas = document.getElementById('parcelas');
+const parcelWrap = document.getElementById('parcelWrap');
+const desc = document.getElementById('desc');
+const obs = document.getElementById('obs');
+const saveTxBtn = document.getElementById('saveTx');
+
+const salary = document.getElementById('salary');
+const closeDayInput = document.getElementById('closeDay');
+const catsInput = document.getElementById('catsInput');
+const saveSettings = document.getElementById('saveSettings');
+const exportBtn = document.getElementById('exportBtn');
+const importFile = document.getElementById('importFile');
+const resetBtn = document.getElementById('resetBtn');
+
+const exportBtnSide = document.getElementById('exportBtnSide');
+const importFileSide = document.getElementById('importFileSide');
+
+const saldoEl = document.getElementById('saldo');
+const receitasEl = document.getElementById('receitas');
+const despesasEl = document.getElementById('despesas');
+const saldoPct = document.getElementById('saldoPct');
+const recCount = document.getElementById('recCount');
+const despCount = document.getElementById('despCount');
+const txCount = document.getElementById('txCount');
+const maxDesp = document.getElementById('maxDesp');
+const pctSal = document.getElementById('pctSal');
+const closeInfo = document.getElementById('closeInfo');
+
+const recentTbody = document.querySelector('#recentTable tbody');
+
+const fatTotal = document.getElementById('fatTotal');
+const fatCount = document.getElementById('fatCount');
+const fatSalary = document.getElementById('fatSalary');
+const fatSalaryInfo = document.getElementById('fatSalaryInfo');
+const fatSaldo = document.getElementById('fatSaldo');
+const fatHint = document.getElementById('fatHint');
+const fatTbody = document.querySelector('#fatTable tbody');
+
+const txTbody = document.querySelector('#txTable tbody');
+
+/* ==========================
+   NAV
+========================== */
+function setView(view){
+  state.ui.view = view;
+
+  // define qual “modo de período” usar no select
+  state.ui.mode = (view === 'fatura') ? 'fatura' : 'month';
+
+  save(state);
+  Object.keys(views).forEach(v => views[v].classList.toggle('active', v===view));
+  navBtns.forEach(b => b.classList.toggle('active', b.dataset.view===view));
+  render();
+}
+navBtns.forEach(b => b.addEventListener('click', ()=> setView(b.dataset.view)));
+
+/* ==========================
+   PERIOD SELECT (mês vs fatura)
+========================== */
+function ensurePeriodOptions(){
+  const keys = new Set();
+
+  if(state.ui.mode === 'fatura'){
+    // períodos baseados no ciclo de fatura
+    state.tx.forEach(t=>{
+      if(t.pay==='card' && t.type==='expense'){
+        const fk = t.faturaKey || computeFaturaKey(t.date, state.settings.closeDay);
+        keys.add(fk);
+      }
+    });
+    if(keys.size===0) keys.add(computeFaturaKey(ymd(new Date()), state.settings.closeDay));
+    hello.textContent = 'Fatura';
+    subtitle.textContent = `Ciclo do cartão (fecha dia ${state.settings.closeDay})`;
+  } else {
+    // períodos mês calendário
+    state.tx.forEach(t=>{
+      keys.add(t.periodKey || monthKey(t.date));
+    });
+    if(keys.size===0) keys.add(monthKey(ymd(new Date())));
+    hello.textContent = 'Visão geral';
+    subtitle.textContent = 'Resumo do mês selecionado';
+  }
+
+  const list = sortPeriodLabels(keys);
+  periodSel.innerHTML = list.map(k=> `<option value="${k}">${labelMMYYYY(k)}</option>`).join('');
+
+  // mantém seleção se existir
+  if(!list.includes(state.ui.periodKey)) state.ui.periodKey = list[list.length-1];
+  periodSel.value = state.ui.periodKey;
+  save(state);
+}
+
+periodSel.addEventListener('change', ()=>{
+  state.ui.periodKey = periodSel.value;
+  save(state);
+  render();
+});
+
+/* ==========================
+   CATEGORIES
+========================== */
+function fillCategories(){
+  cat.innerHTML = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+/* ==========================
+   MODAL: show/hide parcelas
+========================== */
+function updateParcelVisibility(){
+  const isCardExpense = (tipo.value==='expense' && meio.value==='card');
+  parcelWrap.style.display = isCardExpense ? 'block' : 'none';
+}
+tipo.addEventListener('change', updateParcelVisibility);
+meio.addEventListener('change', updateParcelVisibility);
+
+let editPurchaseId = null; // editar compra parcelada (card)
+let editSingleId = null;   // editar transação normal
+
+function openModal({purchaseId=null, singleId=null} = {}){
+  modalWrap.style.display = 'grid';
+  editPurchaseId = purchaseId;
+  editSingleId = singleId;
+
+  fillCategories();
+  const now = new Date();
+  data.value = ymd(now);
+
+  if(purchaseId){
+    // pega a primeira parcela dessa compra
+    const items = state.tx.filter(t=>t.purchaseId===purchaseId);
+    const first = items.sort((a,b)=>{
+      const ai=(a.installment?.i||1), bi=(b.installment?.i||1);
+      return ai-bi;
+    })[0];
+
+    modalTitle.textContent = 'Editar compra (cartão)';
+    tipo.value = 'expense';
+    meio.value = 'card';
+    desc.value = first.description || '';
+    cat.value = first.category || state.categories[0];
+    const n = first.installment?.n || items.length || 1;
+    parcelas.value = n;
+    // soma total
+    const total = items.reduce((s,x)=>s + Number(x.amount||0),0);
+    valor.value = total;
+    obs.value = first.note || '';
+  } else if(singleId){
+    const t = state.tx.find(x=>x.id===singleId);
+    modalTitle.textContent = 'Editar lançamento';
+    tipo.value = t.type;
+    meio.value = t.pay || 'cash';
+    desc.value = t.description || '';
+    cat.value = t.category || state.categories[0];
+    valor.value = t.amount;
+    parcelas.value = '';
+    data.value = t.date;
+    obs.value = t.note || '';
+  } else {
+    modalTitle.textContent = 'Novo lançamento';
+    tipo.value = 'expense';
+    meio.value = 'cash';
+    desc.value = '';
+    valor.value = '';
+    parcelas.value = '';
+    obs.value = '';
+  }
+
+  updateParcelVisibility();
+}
+
+function close(){
+  modalWrap.style.display = 'none';
+  editPurchaseId = null;
+  editSingleId = null;
+}
+
+addBtn.addEventListener('click', ()=> openModal());
+closeModal.addEventListener('click', close);
+modalWrap.addEventListener('click', (e)=>{ if(e.target===modalWrap) close(); });
+
+q.addEventListener('input', ()=> render());
+
+/* ==========================
+   SAVE LAUNCH
+========================== */
+saveTxBtn.addEventListener('click', ()=>{
+  const dsc = desc.value.trim();
+  const amt = Number(valor.value || 0);
+  const dt = data.value;
+  const category = cat.value;
+  const note = obs.value.trim();
+  const ttype = tipo.value;
+  const pay = meio.value;
+
+  if(!dt || !dsc || !amt){
+    alert('Preencha Data, Descrição e Valor.');
     return;
   }
 
-  if(editingId){
-    state.tx = state.tx.filter(t=>t.purchaseId!==editingId);
+  const closeDay = Number(state.settings.closeDay || 16);
+
+  // EDIT CARD PURCHASE (recria tudo)
+  if(editPurchaseId){
+    // remove todas parcelas antigas
+    state.tx = state.tx.filter(x => x.purchaseId !== editPurchaseId);
+
+    const n = Math.max(1, Number(parcelas.value || 1));
+    const per = amt / n;
+
+    for(let i=0;i<n;i++){
+      const d = new Date(dt + 'T12:00:00');
+      d.setMonth(d.getMonth()+i);
+
+      state.tx.push({
+        id: crypto.randomUUID(),
+        purchaseId: editPurchaseId,
+        type: 'expense',
+        pay: 'card',
+        date: ymd(d),
+        category,
+        amount: Number(per.toFixed(2)),
+        description: dsc,
+        note,
+        installment: {i:i+1,n},
+        periodKey: monthKey(ymd(d)),
+        faturaKey: computeFaturaKey(ymd(d), closeDay),
+      });
+    }
+
+    save(state);
+    ensurePeriodOptions();
+    render();
+    close();
+    return;
   }
 
-  const pid = editingId || crypto.randomUUID();
-  const pv = val/parc;
+  // EDIT SINGLE TRANSACTION
+  if(editSingleId){
+    const idx = state.tx.findIndex(x=>x.id===editSingleId);
+    if(idx>=0){
+      const old = state.tx[idx];
 
-  for(let i=0;i<parc;i++){
-    const d=new Date(date);
-    d.setMonth(d.getMonth()+i);
+      // se era cartão parcelado, não deixa editar como “single” (força usar fatura)
+      if(old.pay==='card' && old.purchaseId){
+        alert('Essa transação é compra no cartão. Edite pela aba Fatura.');
+        return;
+      }
+
+      state.tx[idx] = {
+        ...old,
+        type: ttype,
+        pay,
+        date: dt,
+        category,
+        amount: amt,
+        description: dsc,
+        note,
+        periodKey: monthKey(dt),
+        faturaKey: (pay==='card' && ttype==='expense') ? computeFaturaKey(dt, closeDay) : null,
+      };
+    }
+
+    save(state);
+    ensurePeriodOptions();
+    render();
+    close();
+    return;
+  }
+
+  // NEW
+  const isCardExpense = (ttype==='expense' && pay==='card');
+
+  if(isCardExpense){
+    const n = Math.max(1, Number(parcelas.value || 1));
+    const per = amt / n;
+    const purchaseId = crypto.randomUUID();
+
+    for(let i=0;i<n;i++){
+      const d = new Date(dt + 'T12:00:00');
+      d.setMonth(d.getMonth()+i);
+
+      state.tx.push({
+        id: crypto.randomUUID(),
+        purchaseId,
+        type: 'expense',
+        pay: 'card',
+        date: ymd(d),
+        category,
+        amount: Number(per.toFixed(2)),
+        description: dsc,
+        note,
+        installment: {i:i+1,n},
+        periodKey: monthKey(ymd(d)),
+        faturaKey: computeFaturaKey(ymd(d), closeDay),
+      });
+    }
+  } else {
     state.tx.push({
-      purchaseId:pid,
-      desc:dsc,
-      parcela:`${i+1}/${parc}`,
-      amount:pv,
-      fatura:faturaKey(d)
+      id: crypto.randomUUID(),
+      purchaseId: null,
+      type: ttype,
+      pay,
+      date: dt,
+      category,
+      amount: amt,
+      description: dsc,
+      note,
+      installment: null,
+      periodKey: monthKey(dt),
+      faturaKey: null,
     });
   }
 
   save(state);
-  modal.style.display='none';
+  ensurePeriodOptions();
   render();
-};
-
-txTable.addEventListener('click',e=>{
-  const id=e.target.dataset.id;
-  if(!id) return;
-
-  if(e.target.classList.contains('del')){
-    if(confirm('Excluir todas as parcelas dessa compra?')){
-      state.tx=state.tx.filter(t=>t.purchaseId!==id);
-      save(state); render();
-    }
-  }
-
-  if(e.target.classList.contains('edit')){
-    const base=state.tx.find(t=>t.purchaseId===id && t.parcela.startsWith('1/'));
-    editingId=id;
-    modal.style.display='grid';
-    modalTitle.textContent='Editar compra';
-    desc.value=base.desc;
-    const totalParc=Number(base.parcela.split('/')[1]);
-    valor.value=base.amount*totalParc;
-    parcelas.value=totalParc;
-    dataCompra.value=new Date().toISOString().slice(0,10);
-  }
+  close();
 });
 
-buildFaturas();
-render();
+/* ==========================
+   SETTINGS
+========================== */
+function loadSettingsUI(){
+  salary.value = state.settings.salary ?? '';
+  closeDayInput.value = state.settings.closeDay ?? 16;
+  catsInput.value = state.categories.join(', ');
+  closeInfo.textContent = `Dia ${Number(state.settings.closeDay||16)}`;
+}
+
+saveSettings.addEventListener('click', ()=>{
+  const s = Number(salary.value || 0);
+  const cd = Math.min(28, Math.max(1, Number(closeDayInput.value || 16)));
+  const cats = catsInput.value.split(',').map(x=>x.trim()).filter(Boolean);
+  if(cats.length===0){
+    alert('Informe pelo menos 1 categoria.');
+    return;
+  }
+
+  state.settings.salary = s;
+  state.settings.closeDay = cd;
+  state.categories = cats;
+
+  // corrige categorias que não existem mais
+  const fallback = cats.includes('Outros') ? 'Outros' : cats[0];
+  state.tx = state.tx.map(t => cats.includes(t.category) ? t : ({...t, category:fallback}));
+
+  // recalcula faturaKey das compras no cartão
+  state.tx = state.tx.map(t => {
+    if(t.pay==='card' && t.type==='expense'){
+      return {...t, faturaKey: computeFaturaKey(t.date, cd)};
+    }
+    return t;
+  });
+
+  save(state);
+  fillCategories();
+  ensurePeriodOptions();
+  loadSettingsUI();
+  render();
+  alert('Configurações salvas.');
+});
+
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `financeControl-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+exportBtn.addEventListener('click', exportJSON);
+exportBtnSide.addEventListener('click', exportJSON);
+
+async function importJSON(file){
+  try{
+    const text = await file.text();
+    const obj = JSON.parse(text);
+    if(!obj || !obj.settings || !Array.isArray(obj.categories) || !Array.isArray(obj.tx)){
+      alert('Arquivo inválido.');
+      return;
+    }
+    state = obj;
+    save(state);
+    fillCategories();
+    ensurePeriodOptions();
+    loadSettingsUI();
+    render();
+    alert('Backup importado com sucesso.');
+  }catch(e){
+    alert('Falha ao importar: arquivo inválido.');
+  }
+}
+importFile.addEventListener('change', async ()=>{
+  const f = importFile.files?.[0];
+  if(f) await importJSON(f);
+  importFile.value='';
+});
+importFileSide.addEventListener('change', async ()=>{
+  const f = importFileSide.files?.[0];
+  if(f) await importJSON(f);
+  importFileSide.value='';
+});
+
+resetBtn.addEventListener('click', ()=>{
+  const ok = confirm('Tem certeza? Isso apaga tudo (a menos que você tenha exportado o backup).');
+  if(!ok) return;
+  state = defaultData();
+  save(state);
+  fillCategories(); ensurePeriodOptions(); loadSettingsUI(); render();
+  alert('Reset concluído.');
+});
+
+/* ==========================
+   FILTER HELPERS
+========================== */
+function termMatch(t, term){
+  if(!term) return true;
+  const s = term.toLowerCase();
+  return (t.description||'').toLowerCase().includes(s) || (t.category||'').toLowerCase().includes(s);
+}
+
+function getMonthTx(periodKey){
+  // mês calendário (Dashboard e Transações gerais)
+  const term = q.value.trim();
+  return state.tx
+    .filter(t => (t.periodKey || monthKey(t.date)) === periodKey)
+    .filter(t => termMatch(t, term));
+}
+
+function getFaturaItems(faturaKey){
+  const term = q.value.trim();
+  const cd = Number(state.settings.closeDay||16);
+  return state.tx
+    .filter(t => t.type==='expense' && t.pay==='card')
+    .map(t => ({...t, faturaKey: t.faturaKey || computeFaturaKey(t.date, cd)}))
+    .filter(t => t.faturaKey === faturaKey)
+    .filter(t => termMatch(t, term));
+}
+
+/* ==========================
+   RENDER: DASHBOARD
+========================== */
+function renderDashboard(){
+  const periodKey = state.ui.periodKey;
+  const list = getMonthTx(periodKey);
+
+  const incList = list.filter(t=>t.type==='income');
+  const expList = list.filter(t=>t.type==='expense');
+
+  const inc = incList.reduce((a,b)=>a + Number(b.amount||0),0);
+  const exp = expList.reduce((a,b)=>a + Number(b.amount||0),0);
+  const bal = inc - exp;
+
+  saldoEl.textContent = money(bal);
+  receitasEl.textContent = money(inc);
+  despesasEl.textContent = money(exp);
+
+  recCount.textContent = `${incList.length} lançamentos`;
+  despCount.textContent = `${expList.length} lançamentos`;
+  txCount.textContent = String(list.length);
+
+  const sal = Number(state.settings.salary || 0);
+  if(sal>0){
+    const pct = Math.min(999, (exp/sal)*100);
+    pctSal.textContent = `${pct.toFixed(0)}%`;
+    saldoPct.textContent = `${(bal/sal*100).toFixed(0)}% do salário`;
+  } else {
+    pctSal.textContent = '—';
+    saldoPct.textContent = '—';
+  }
+
+  const maxE = expList.sort((a,b)=>b.amount-a.amount)[0];
+  maxDesp.textContent = maxE ? `${money(maxE.amount)} (${maxE.category})` : '—';
+
+  const last = [...list].sort((a,b)=> b.date.localeCompare(a.date)).slice(0,10);
+  recentTbody.innerHTML = last.map(t=>{
+    const cls = t.type==='income' ? 'pos' : 'neg';
+    const sign = t.type==='income' ? '+' : '-';
+    const dateBr = `${t.date.slice(8,10)}/${t.date.slice(5,7)}`;
+    const tipoTxt = t.type==='income' ? 'Receita' : 'Despesa';
+    return `<tr>
+      <td>${dateBr}</td>
+      <td>${tipoTxt}</td>
+      <td style="color:rgba(255,255,255,.78)">${t.description}</td>
+      <td class="amt ${cls}">${sign} ${money(t.amount)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="4" style="color:var(--muted2);padding:14px;">Sem lançamentos nesse mês.</td></tr>`;
+}
+
+/* ==========================
+   RENDER: FATURA
+========================== */
+function renderFatura(){
+  const fk = state.ui.periodKey;
+  const items = getFaturaItems(fk);
+  const total = items.reduce((s,t)=> s + Number(t.amount||0),0);
+
+  fatTotal.textContent = money(total);
+  fatCount.textContent = `${items.length} itens`;
+  fatSalary.textContent = money(Number(state.settings.salary||0));
+  fatSalaryInfo.textContent = Number(state.settings.salary||0) ? 'OK' : 'Config';
+  fatSaldo.textContent = money((Number(state.settings.salary||0)) - total);
+  fatHint.textContent = `Fecha dia ${Number(state.settings.closeDay||16)}`;
+
+  const sorted = [...items].sort((a,b)=> (a.date.localeCompare(b.date)));
+  fatTbody.innerHTML = sorted.map(t=>{
+    const parcelaTxt = t.installment ? `${t.installment.i}/${t.installment.n}` : '—';
+    return `<tr>
+      <td>${labelMMYYYY(t.faturaKey)}</td>
+      <td style="color:rgba(255,255,255,.78)">${t.description}</td>
+      <td>${t.category}</td>
+      <td>${parcelaTxt}</td>
+      <td class="amt neg">- ${money(t.amount)}</td>
+      <td style="text-align:right;">
+        <div class="actionsInline">
+          <button class="mini" data-act="editPurchase" data-id="${t.purchaseId}">Editar</button>
+          <button class="mini" data-act="delPurchase" data-id="${t.purchaseId}">Excluir</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="6" style="color:var(--muted2);padding:14px;">Sem itens nessa fatura.</td></tr>`;
+
+  // Event delegation
+  fatTbody.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const act = btn.dataset.act;
+      const id = btn.dataset.id;
+      if(act==='editPurchase'){
+        openModal({purchaseId:id});
+      }
+      if(act==='delPurchase'){
+        const ok = confirm('Excluir essa compra do cartão? (apaga TODAS as parcelas)');
+        if(!ok) return;
+        state.tx = state.tx.filter(x => x.purchaseId !== id);
+        save(state);
+        ensurePeriodOptions();
+        render();
+      }
+    });
+  });
+}
+
+/* ==========================
+   RENDER: TX GERAIS
+========================== */
+function renderTx(){
+  const periodKey = state.ui.periodKey;
+  const list = getMonthTx(periodKey);
+
+  const sorted = [...list].sort((a,b)=> b.date.localeCompare(a.date));
+  txTbody.innerHTML = sorted.map(t=>{
+    const cls = t.type==='income' ? 'pos' : 'neg';
+    const sign = t.type==='income' ? '+' : '-';
+    const tipoTxt = t.type==='income' ? 'Receita' : 'Despesa';
+    const meioTxt = (t.pay==='card') ? 'Cartão' : (t.pay==='debit' ? 'Débito' : 'Dinheiro/Pix');
+    const dateBr = `${t.date.slice(8,10)}/${t.date.slice(5,7)}/${t.date.slice(0,4)}`;
+
+    const isCard = (t.pay==='card' && t.type==='expense' && t.purchaseId);
+    const actions = isCard
+      ? `<span style="color:var(--muted2)">Edite na aba Fatura</span>`
+      : `<div class="actionsInline">
+           <button class="mini" data-act="editSingle" data-id="${t.id}">Editar</button>
+           <button class="mini" data-act="delSingle" data-id="${t.id}">Excluir</button>
+         </div>`;
+
+    return `<tr>
+      <td>${dateBr}</td>
+      <td>${tipoTxt}</td>
+      <td>${meioTxt}</td>
+      <td style="color:rgba(255,255,255,.78)">${t.description}</td>
+      <td>${t.category}</td>
+      <td class="amt ${cls}">${sign} ${money(t.amount)}</td>
+      <td style="text-align:right;">${actions}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="color:var(--muted2);padding:14px;">Sem transações neste mês.</td></tr>`;
+
+  txTbody.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const act = btn.dataset.act;
+      const id = btn.dataset.id;
+      if(act==='editSingle') openModal({singleId:id});
+      if(act==='delSingle'){
+        const ok = confirm('Excluir essa transação?');
+        if(!ok) return;
+        state.tx = state.tx.filter(x=>x.id!==id);
+        save(state);
+        ensurePeriodOptions();
+        render();
+      }
+    });
+  });
+}
+
+/* ==========================
+   RENDER MAIN
+========================== */
+function render(){
+  loadSettingsUI();
+  fillCategories();
+  ensurePeriodOptions();
+
+  if(state.ui.view === 'dash') renderDashboard();
+  if(state.ui.view === 'fatura') renderFatura();
+  if(state.ui.view === 'tx') renderTx();
+}
+
+/* ==========================
+   INIT
+========================== */
+fillCategories();
+ensurePeriodOptions();
+loadSettingsUI();
+setView(state.ui.view || 'dash');
 </script>
 </body>
 </html>
