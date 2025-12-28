@@ -360,10 +360,13 @@ const defaultState = {
   salario: 3450,
   categorias: ["Alimentação","Combustível","Lazer","Contas","Saúde","Outros"],
   tx: [],        // {id,tipo,meio,categoria,valor,data,mes,desc}
-  cartao: [],    // parcelas: {id, groupId, desc, categoria, valor, parcela, mes, dataCompra, total, parcelas}
+  cartao: [],    // parcelas: {id, groupId, desc, categoria, valor, parcela, mes, faturaMes, dataCompra, total, parcelas}
   fixos: [],     // {id,nome,valor,categoria,dia,ativa}
   metas: [],     // {id,nome,alvo,guardado}
-  orcamento: {}  // {categoria: limite}
+  orcamento: {}, // {categoria: limite}
+
+  // ✅ NOVO: config do cartão (fechamento/vencimento)
+  cartaoCfg: { fechamentoDia: 20, vencimentoDia: 5 }
 };
 
 const load = () => {
@@ -375,7 +378,12 @@ const load = () => {
       ...structuredClone(defaultState),
       ...s,
       categorias: Array.isArray(s.categorias) && s.categorias.length ? s.categorias : structuredClone(defaultState.categorias),
-      orcamento: s.orcamento && typeof s.orcamento === "object" ? s.orcamento : {}
+      orcamento: s.orcamento && typeof s.orcamento === "object" ? s.orcamento : {},
+
+      // ✅ NOVO: preserva config do cartão (se não existir, usa padrão)
+      cartaoCfg: s.cartaoCfg && typeof s.cartaoCfg === "object"
+        ? s.cartaoCfg
+        : structuredClone(defaultState.cartaoCfg),
     };
   }catch{
     return structuredClone(defaultState);
@@ -405,6 +413,22 @@ const monthLabel = (ym) => {
 const money = (v) => (Number(v||0)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const sum = (arr, key="valor") => arr.reduce((a,b)=>a+Number(b[key]||0),0);
 
+/* ==========================
+   ✅ NOVO: FATURA ESTILO BANCO (fechamento dia 20)
+   ========================== */
+function addMonthsYM(ym, add){
+  const [y0,m0] = ym.split("-").map(Number);
+  const d = new Date(y0, (m0-1) + add, 1);
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+}
+function faturaMesByDate(dateStr){
+  const fechamento = Number(state.cartaoCfg?.fechamentoDia || 20);
+  const d = new Date(dateStr + "T00:00:00");
+  const ym = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+  // após o fechamento → fatura do mês seguinte
+  return d.getDate() > fechamento ? addMonthsYM(ym, 1) : ym;
+}
+
 /* Month selection */
 let selectedMonth = localStorage.getItem(KEY+"_month") || monthNow();
 localStorage.setItem(KEY+"_month", selectedMonth);
@@ -425,11 +449,19 @@ function setView(v){
 function getMonthOptions(){
   const set = new Set([monthNow()]);
   state.tx.forEach(t=> set.add(t.mes || ymFromDate(t.data)));
-  state.cartao.forEach(p=> set.add(normalizeYM(p.mes)));
+
+  // ✅ ALTERADO: meses do cartão agora usam faturaMes (fallback para mes antigo)
+  state.cartao.forEach(p=> set.add(normalizeYM(p.faturaMes || p.mes)));
+
   return Array.from(set).filter(Boolean).sort();
 }
 function monthTx(ym){ return state.tx.filter(t => (t.mes || ymFromDate(t.data)) === ym); }
-function monthCard(ym){ return state.cartao.filter(p => normalizeYM(p.mes) === ym); }
+
+// ✅ ALTERADO: cartão agora filtra pelo mês da fatura (banco)
+function monthCard(ym){
+  return state.cartao.filter(p => normalizeYM(p.faturaMes || p.mes) === ym);
+}
+
 function monthFixed(){ return state.fixos.filter(f => f.ativa); }
 
 function totalsForMonth(ym){
@@ -629,7 +661,12 @@ function createCardPurchase({groupId, desc, categoria, dataCompra, total, parcel
   for(let i=0;i<parcelas;i++){
     const dt = new Date(start);
     dt.setMonth(dt.getMonth()+i);
+
     const mes = `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}`;
+
+    // ✅ NOVO: mês de fatura estilo banco
+    const dataParcela = dt.toISOString().slice(0,10);
+    const faturaMes = faturaMesByDate(dataParcela);
 
     state.cartao.push({
       id: uid(),
@@ -639,6 +676,7 @@ function createCardPurchase({groupId, desc, categoria, dataCompra, total, parcel
       valor: Number(per.toFixed(2)),
       parcela: `${i+1}/${parcelas}`,
       mes,
+      faturaMes,  // ✅ NOVO
       dataCompra,
       total,
       parcelas
@@ -800,7 +838,6 @@ function getCardGroupsForMonth(ym){
     map[p.groupId].push(p);
   }
   const groups = Object.entries(map).map(([groupId, arr])=>{
-    // todas as parcelas compartilham os metadados (total/parcelas/desc etc)
     const sample = arr[0];
     return {
       groupId,
@@ -816,7 +853,6 @@ function getCardGroupsForMonth(ym){
 }
 
 function editCardPurchase(groupId){
-  // pega "amostra" da compra
   const any = state.cartao.find(p=>p.groupId===groupId);
   if(!any) return;
   openModal("tx", {
@@ -902,7 +938,6 @@ function renderOverview(){
 
   const entries = Object.entries(spend).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
-  // dica simples
   let tip = "Cadastre metas (PC/carro/reserva) pra o sistema calcular o prazo.";
   if(state.metas.length){
     const g = state.metas[0];
@@ -1107,14 +1142,16 @@ function renderFixed(){
 function renderCards(){
   const list = monthCard(selectedMonth);
   const totalMes = sum(list);
-
   const groups = getCardGroupsForMonth(selectedMonth);
+
+  const fechamento = state.cartaoCfg?.fechamentoDia || 20;
+  const venc = state.cartaoCfg?.vencimentoDia || 5;
 
   cards.innerHTML = `
     <div class="split" style="margin-bottom:12px">
       <div>
         <h2 class="title" style="margin:0">Cartão / Fatura</h2>
-        <div class="sub">Fatura do mês com parcelas. Você pode editar ou excluir a compra inteira.</div>
+        <div class="sub">Fechamento dia ${fechamento} • Vencimento dia ${venc} • Editar/excluir por compra.</div>
       </div>
       <button class="btnPrimary" onclick="openModal('tx', {tipo:'cartao', meio:'Crédito', parcelas:1})">+ Compra no cartão</button>
     </div>
@@ -1137,7 +1174,7 @@ function renderCards(){
         <table style="margin-top:10px">
           <tr><th>Compra</th><th>Categoria</th><th>Parcelas</th><th>Parcela no mês</th><th>Ações</th></tr>
           ${groups.map(g=>{
-            const p = g.parcelasNoMes[0]; // amostra do mês
+            const p = g.parcelasNoMes[0];
             const parcelaMes = `${p.parcela} • ${money(p.valor)}`;
             return `
               <tr>
@@ -1234,6 +1271,21 @@ function render(){
   if(view==="cards") renderCards();
   if(view==="tx") renderTx();
 }
+
+/* ==========================
+   ✅ Migração (1x): preenche faturaMes em dados antigos
+   ========================== */
+(function migrateFaturaMes(){
+  let changed = false;
+  for(const p of state.cartao){
+    if(!p.faturaMes){
+      const dateStr = (p.mes && String(p.mes).includes("-")) ? `${normalizeYM(p.mes)}-01` : new Date().toISOString().slice(0,10);
+      p.faturaMes = faturaMesByDate(dateStr);
+      changed = true;
+    }
+  }
+  if(changed) save();
+})();
 
 /* init */
 render();
