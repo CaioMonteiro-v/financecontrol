@@ -1,197 +1,1241 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>FinanceControl</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#0b1020;
-  --panel:#101a36;
-  --line:rgba(255,255,255,.08);
-  --text:#fff;
-  --muted:#aaa;
-  --good:#29d17d;
-  --bad:#ff4d6d;
-  --accent:#6d7cff;
-}
-*{box-sizing:border-box;font-family:Inter}
-body{margin:0;background:var(--bg);color:var(--text)}
-.app{display:grid;grid-template-columns:220px 1fr;height:100vh}
-aside{border-right:1px solid var(--line);padding:20px}
-main{padding:20px;overflow:auto}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>FinanceControl • Metas, Contas, Parcelas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0f18;
+      --panel:#111827;
+      --panel2:#0f172a;
+      --line:rgba(255,255,255,.08);
+      --text:#e8eefc;
+      --muted:rgba(232,238,252,.65);
+      --accent:#7c5cff;
+      --accent2:#2dd4bf;
+      --good:#22c55e;
+      --bad:#fb7185;
+      --warn:#fbbf24;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    body{
+      margin:0;
+      color:var(--text);
+      background:
+        radial-gradient(1000px 500px at 15% 0%, rgba(124,92,255,.20), transparent 60%),
+        radial-gradient(900px 450px at 85% 10%, rgba(45,212,191,.12), transparent 60%),
+        var(--bg);
+    }
+    button,input,select,textarea{
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      outline:none;
+    }
+    input::placeholder{color:rgba(232,238,252,.45)}
+    button{cursor:pointer;font-weight:700}
+    button:hover{border-color:rgba(255,255,255,.14)}
+    .btnPrimary{background:rgba(124,92,255,.18);border-color:rgba(124,92,255,.35)}
+    .btnGhost{background:transparent}
+    .btnGood{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.28)}
+    .btnBad{background:rgba(251,113,133,.12);border-color:rgba(251,113,133,.28)}
+    .btnWarn{background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.26)}
+    .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+    aside{
+      padding:18px;
+      border-right:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 60%);
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;
+      padding:14px;border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+    .logo{
+      width:44px;height:44px;border-radius:16px;
+      background:linear-gradient(135deg, rgba(124,92,255,.95), rgba(45,212,191,.75));
+      display:grid;place-items:center;font-weight:900;
+    }
+    .brand h1{margin:0;font-size:16px}
+    .brand p{margin:2px 0 0 0;font-size:12px;color:var(--muted)}
+    .nav{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+    .nav button{
+      width:100%;text-align:left;
+      display:flex;align-items:center;gap:10px;
+      padding:12px 12px;border-radius:14px;
+      background:rgba(255,255,255,.03);
+    }
+    .nav button.active{
+      background:rgba(124,92,255,.16);
+      border-color:rgba(124,92,255,.35);
+    }
+    .ico{
+      width:28px;height:28px;border-radius:10px;
+      display:grid;place-items:center;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      color:rgba(232,238,252,.85);
+      font-size:12px;
+      flex:0 0 auto;
+    }
+    .sidebarBox{
+      margin-top:14px;
+      padding:14px;border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+    }
+    .sidebarRow{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+    .sidebarRow b{font-size:13px}
+    .sidebarRow span{font-size:12px;color:var(--muted)}
+    main{padding:18px;overflow:auto}
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .topLeft{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .pill{
+      display:flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+    }
+    .pill label{font-size:12px;color:var(--muted)}
+    .pill b{font-size:12px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+    .card{
+      border-radius:22px;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .span3{grid-column:span 3}
+    .span4{grid-column:span 4}
+    .span5{grid-column:span 5}
+    .span6{grid-column:span 6}
+    .span7{grid-column:span 7}
+    .span8{grid-column:span 8}
+    .span12{grid-column:span 12}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .value{font-size:24px;font-weight:900}
+    .good{color:var(--good)}
+    .bad{color:var(--bad)}
+    .warn{color:var(--warn)}
+    .muted{color:var(--muted)}
+    .split{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .title{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-0.2px;
+    }
+    .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}
+    th{color:var(--muted);font-weight:700;text-align:left}
+    .tag{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 8px;border-radius:999px;
+      font-size:12px;background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      color:rgba(232,238,252,.9);
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.25)}
+    .progress{height:10px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;border:1px solid var(--line)}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg, rgba(124,92,255,.95), rgba(45,212,191,.85))}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row1{display:grid;grid-template-columns:1fr;gap:10px}
 
-button,input,select{
-  background:#0f1730;
-  color:#fff;
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:10px
-}
-button{cursor:pointer}
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:14px;z-index:20}
+    .modalBox{
+      width:100%;max-width:620px;
+      border-radius:26px;
+      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .modalHeader{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .modalHeader h2{margin:0;font-size:16px}
+    .modalFooter{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.35}
 
-.nav button{width:100%;margin-bottom:8px;text-align:left}
-.nav button.active{background:var(--accent)}
-
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
-.card{background:var(--panel);padding:14px;border-radius:14px}
-.label{color:var(--muted);font-size:13px}
-.value{font-size:22px;font-weight:700}
-
-.good{color:var(--good)}
-.bad{color:var(--bad)}
-
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}
-
-.modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.6);
-  display:none;align-items:center;justify-content:center
-}
-.modalBox{
-  background:#0f1730;padding:20px;border-radius:16px;width:100%;max-width:520px
-}
-.modalBox h3{margin-top:0}
-.modalBox input,select{width:100%;margin-bottom:10px}
-.actions{display:flex;justify-content:flex-end;gap:10px}
-</style>
+    @media (max-width: 980px){
+      .app{grid-template-columns:1fr}
+      aside{display:none}
+      .span3,.span4,.span5,.span6,.span7,.span8{grid-column:span 12}
+    }
+  </style>
 </head>
 
 <body>
 <div class="app">
-<aside>
-  <h2>FinanceControl</h2>
-  <div class="nav">
-    <button onclick="setView('dash')" class="active">Dashboard</button>
-    <button onclick="setView('fatura')">Fatura</button>
-    <button onclick="setView('lanc')">Lançamentos</button>
-  </div>
-</aside>
+  <aside>
+    <div class="brand">
+      <div class="logo">FC</div>
+      <div>
+        <h1>FinanceControl</h1>
+        <p>metas • sobras • parcelas • contas</p>
+      </div>
+    </div>
 
-<main>
-  <div id="dash" class="view"></div>
-  <div id="fatura" class="view" style="display:none"></div>
-  <div id="lanc" class="view" style="display:none"></div>
-</main>
+    <div class="nav">
+      <button class="active" onclick="setView('overview')"><span class="ico">🏠</span> Visão geral</button>
+      <button onclick="setView('goals')"><span class="ico">🎯</span> Metas</button>
+      <button onclick="setView('budget')"><span class="ico">🧾</span> Orçamento</button>
+      <button onclick="setView('fixed')"><span class="ico">📌</span> Contas fixas</button>
+      <button onclick="setView('cards')"><span class="ico">💳</span> Cartão / Fatura</button>
+      <button onclick="setView('tx')"><span class="ico">📒</span> Lançamentos</button>
+      <button onclick="openModal('settings')"><span class="ico">⚙️</span> Configurações</button>
+    </div>
+
+    <div class="sidebarBox">
+      <div class="split">
+        <div>
+          <div class="label">Mês atual</div>
+          <div style="font-weight:900" id="sideMonth">—</div>
+        </div>
+        <button class="btnPrimary" onclick="openModal('tx')">+ Lançar</button>
+      </div>
+      <div class="sidebarRow"><b>Comprometido</b><span id="sideCommitted">—</span></div>
+      <div class="sidebarRow"><b>Sobrando</b><span id="sideLeft">—</span></div>
+      <div class="sidebarRow"><b>Metas</b><span id="sideGoals">—</span></div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="topLeft">
+        <div class="pill">
+          <label>Mês</label>
+          <select id="monthSel"></select>
+        </div>
+        <div class="pill">
+          <label>Salário</label>
+          <b id="salaryLabel">—</b>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btnPrimary" onclick="openModal('tx')">+ Lançamento</button>
+        <button class="btnGood" onclick="openModal('goal')">+ Meta</button>
+        <button class="btnGhost" onclick="exportData()">Exportar</button>
+        <button class="btnBad" onclick="resetAll()">Zerar</button>
+      </div>
+    </div>
+
+    <div id="overview" class="view"></div>
+    <div id="goals" class="view" style="display:none"></div>
+    <div id="budget" class="view" style="display:none"></div>
+    <div id="fixed" class="view" style="display:none"></div>
+    <div id="cards" class="view" style="display:none"></div>
+    <div id="tx" class="view" style="display:none"></div>
+  </main>
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modalBox">
-    <h3>Novo lançamento</h3>
-    <select id="tipo">
-      <option value="entrada">Entrada</option>
-      <option value="saida">Saída</option>
-      <option value="cartao">Cartão</option>
-    </select>
-    <select id="meio">
-      <option>Dinheiro</option>
-      <option>Pix</option>
-      <option>Débito</option>
-      <option>Crédito</option>
-    </select>
-    <input id="desc" placeholder="Descrição">
-    <input id="valor" type="number" placeholder="Valor">
-    <input id="parcelas" type="number" placeholder="Parcelas (cartão)">
-    <input id="data" type="date">
-    <div class="actions">
-      <button onclick="closeModal()">Cancelar</button>
-      <button onclick="saveTx()">Salvar</button>
+    <div class="modalHeader">
+      <h2 id="modalTitle">—</h2>
+      <button onclick="closeModal()">Fechar</button>
+    </div>
+
+    <!-- TX FORM -->
+    <div id="formTx" style="display:none;margin-top:12px">
+      <div class="row2">
+        <select id="txTipo">
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+          <option value="cartao">Cartão (parcelado/à vista)</option>
+        </select>
+        <select id="txMeio">
+          <option>Dinheiro</option>
+          <option>Pix</option>
+          <option>Débito</option>
+          <option>Crédito</option>
+        </select>
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <select id="txCat"></select>
+        <input id="txData" type="date" />
+      </div>
+      <div class="row1" style="margin-top:10px">
+        <input id="txDesc" placeholder="Descrição (ex: Mercado, Gasolina, Netflix)" />
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <input id="txValor" type="number" placeholder="Valor total (R$)" />
+        <input id="txParcelas" type="number" placeholder="Parcelas (1 = à vista)" />
+      </div>
+      <div class="hint">
+        <b>Editar:</b> você consegue editar entradas/saídas. <br/>
+        <b>Cartão:</b> ao editar uma compra, o sistema apaga as parcelas antigas e recria com os novos dados.
+      </div>
+      <div class="modalFooter">
+        <button onclick="closeModal()">Cancelar</button>
+        <button class="btnPrimary" id="txSaveBtn" onclick="saveTx()">Salvar</button>
+      </div>
+    </div>
+
+    <!-- FIXED FORM -->
+    <div id="formFixed" style="display:none;margin-top:12px">
+      <div class="row1">
+        <input id="fxName" placeholder="Conta fixa (ex: Internet, Academia)" />
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <input id="fxValue" type="number" placeholder="Valor (R$)" />
+        <select id="fxCat"></select>
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <input id="fxDay" type="number" placeholder="Dia do vencimento (ex: 10)" />
+        <select id="fxActive">
+          <option value="1">Ativa</option>
+          <option value="0">Pausada</option>
+        </select>
+      </div>
+      <div class="modalFooter">
+        <button onclick="closeModal()">Cancelar</button>
+        <button class="btnPrimary" id="fxSaveBtn" onclick="saveFixed()">Salvar</button>
+      </div>
+    </div>
+
+    <!-- GOAL FORM -->
+    <div id="formGoal" style="display:none;margin-top:12px">
+      <div class="row1">
+        <input id="goalName" placeholder="Meta (ex: PC novo, Carro, Reserva)" />
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <input id="goalTarget" type="number" placeholder="Valor alvo (R$)" />
+        <input id="goalSaved" type="number" placeholder="Já guardado (R$)" />
+      </div>
+      <div class="modalFooter">
+        <button onclick="closeModal()">Cancelar</button>
+        <button class="btnPrimary" id="goalSaveBtn" onclick="saveGoal()">Salvar</button>
+      </div>
+    </div>
+
+    <!-- BUDGET FORM -->
+    <div id="formBudget" style="display:none;margin-top:12px">
+      <div class="row2">
+        <select id="bdCat"></select>
+        <input id="bdLimit" type="number" placeholder="Limite mensal (R$)" />
+      </div>
+      <div class="modalFooter">
+        <button onclick="closeModal()">Cancelar</button>
+        <button class="btnPrimary" onclick="saveBudget()">Salvar</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS FORM -->
+    <div id="formSettings" style="display:none;margin-top:12px">
+      <div class="row2">
+        <input id="setSalary" type="number" placeholder="Seu salário (R$)" />
+        <input id="setCats" placeholder="Categorias (separadas por vírgula)" />
+      </div>
+      <div class="hint">Ex: Alimentação, Combustível, Lazer, Contas, Saúde, Outros</div>
+      <div class="modalFooter">
+        <button onclick="closeModal()">Cancelar</button>
+        <button class="btnPrimary" onclick="saveSettings()">Salvar</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-const KEY='finance_control_final';
-const load=()=>JSON.parse(localStorage.getItem(KEY))||{
-  salario:3450,
-  tx:[],
-  cartao:[]
-};
-const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
-let state=load();
-let view='dash';
+/* ==========================
+   FinanceControl (layout novo + CRUD completo)
+   ========================== */
+const KEY = "finance_control_crud_v2";
 
+const defaultState = {
+  salario: 3450,
+  categorias: ["Alimentação","Combustível","Lazer","Contas","Saúde","Outros"],
+  tx: [],        // {id,tipo,meio,categoria,valor,data,mes,desc}
+  cartao: [],    // parcelas: {id, groupId, desc, categoria, valor, parcela, mes, dataCompra, total, parcelas}
+  fixos: [],     // {id,nome,valor,categoria,dia,ativa}
+  metas: [],     // {id,nome,alvo,guardado}
+  orcamento: {}  // {categoria: limite}
+};
+
+const load = () => {
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return structuredClone(defaultState);
+    const s = JSON.parse(raw);
+    return {
+      ...structuredClone(defaultState),
+      ...s,
+      categorias: Array.isArray(s.categorias) && s.categorias.length ? s.categorias : structuredClone(defaultState.categorias),
+      orcamento: s.orcamento && typeof s.orcamento === "object" ? s.orcamento : {}
+    };
+  }catch{
+    return structuredClone(defaultState);
+  }
+};
+let state = load();
+const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+
+/* Utils */
+const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2));
+const pad2 = (n) => String(n).padStart(2,"0");
+const monthNow = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+};
+const ymFromDate = (d) => d ? d.slice(0,7) : "";
+const normalizeYM = (ym) => {
+  if(!ym) return "";
+  const [y,m] = String(ym).split("-");
+  if(!y || !m) return ym;
+  return `${y}-${pad2(m)}`;
+};
+const monthLabel = (ym) => {
+  const [y,m] = ym.split("-");
+  return `${m}/${y}`;
+};
+const money = (v) => (Number(v||0)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const sum = (arr, key="valor") => arr.reduce((a,b)=>a+Number(b[key]||0),0);
+
+/* Month selection */
+let selectedMonth = localStorage.getItem(KEY+"_month") || monthNow();
+localStorage.setItem(KEY+"_month", selectedMonth);
+
+/* Views */
+let view = "overview";
 function setView(v){
-  view=v;
-  document.querySelectorAll('.view').forEach(x=>x.style.display='none');
-  document.getElementById(v).style.display='block';
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`.nav button[onclick*="${v}"]`).classList.add('active');
+  view = v;
+  document.querySelectorAll(".view").forEach(x=>x.style.display="none");
+  document.getElementById(v).style.display="block";
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+  const btn = Array.from(document.querySelectorAll(".nav button")).find(b => (b.getAttribute("onclick")||"").includes(v));
+  if(btn) btn.classList.add("active");
   render();
 }
 
-function money(v){
-  return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+/* Data by month */
+function getMonthOptions(){
+  const set = new Set([monthNow()]);
+  state.tx.forEach(t=> set.add(t.mes || ymFromDate(t.data)));
+  state.cartao.forEach(p=> set.add(normalizeYM(p.mes)));
+  return Array.from(set).filter(Boolean).sort();
+}
+function monthTx(ym){ return state.tx.filter(t => (t.mes || ymFromDate(t.data)) === ym); }
+function monthCard(ym){ return state.cartao.filter(p => normalizeYM(p.mes) === ym); }
+function monthFixed(){ return state.fixos.filter(f => f.ativa); }
+
+function totalsForMonth(ym){
+  const tx = monthTx(ym);
+  const card = monthCard(ym);
+  const fix = monthFixed();
+
+  const entradas = sum(tx.filter(t=>t.tipo==="entrada"));
+  const saidas = sum(tx.filter(t=>t.tipo==="saida"));
+  const fixosTotal = sum(fix);
+  const cartaoTotal = sum(card);
+
+  const comprometido = fixosTotal + cartaoTotal;
+  const sobrando = Number(state.salario) + entradas - saidas - comprometido;
+
+  return {tx, card, fix, entradas, saidas, fixosTotal, cartaoTotal, comprometido, sobrando};
 }
 
-function openModal(){
-  document.getElementById('modal').style.display='flex';
+function spendingByCategory(ym){
+  const {tx, card, fix} = totalsForMonth(ym);
+  const map = {};
+  const add = (cat,v)=>{ const c = cat || "Outros"; map[c]=(map[c]||0)+Number(v||0); };
+  tx.filter(t=>t.tipo==="saida").forEach(t=> add(t.categoria,t.valor));
+  fix.forEach(f=> add(f.categoria,f.valor));
+  card.forEach(p=> add(p.categoria,p.valor));
+  state.categorias.forEach(c=>{ if(map[c]==null) map[c]=0; });
+  return map;
 }
-function closeModal(){
-  document.getElementById('modal').style.display='none';
+
+/* ===== Modal ===== */
+const modal = document.getElementById("modal");
+const modalTitle = document.getElementById("modalTitle");
+
+const formTx = document.getElementById("formTx");
+const formFixed = document.getElementById("formFixed");
+const formGoal = document.getElementById("formGoal");
+const formBudget = document.getElementById("formBudget");
+const formSettings = document.getElementById("formSettings");
+
+let modalMode = null;
+
+// edição
+let editTxId = null;          // tx normal
+let editFixedId = null;
+let editGoalId = null;
+let editCardGroupId = null;   // compra no cartão (grupo)
+
+function hideAllForms(){
+  [formTx,formFixed,formGoal,formBudget,formSettings].forEach(f=>f.style.display="none");
 }
 
-function saveTx(){
-  const tipo=tipoEl.value;
-  const meio=meioEl.value;
-  const v=Number(valor.value);
-  const d=data.value;
-  const ds=desc.value;
-  const p=Number(parcelas.value||1);
+function fillCats(selectId, defaultValue=null){
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = state.categorias.map(c=>`<option>${c}</option>`).join("");
+  if(defaultValue && state.categorias.includes(defaultValue)) sel.value = defaultValue;
+}
 
-  if(!v||!d||!ds){alert('Preencha tudo');return}
+function openModal(mode, payload=null){
+  modalMode = mode;
+  hideAllForms();
 
-  if(tipo==='cartao'){
-    const id=crypto.randomUUID();
-    for(let i=0;i<p;i++){
-      const dt=new Date(d);
-      dt.setMonth(dt.getMonth()+i);
-      state.cartao.push({
-        id,desc:ds,valor:v/p,parcela:`${i+1}/${p}`,
-        mes:`${dt.getFullYear()}-${dt.getMonth()+1}`
-      });
-    }
-  }else{
-    state.tx.push({tipo,meio,valor:v,data:d,desc:ds});
+  // reset ids
+  editTxId = null; editFixedId = null; editGoalId = null; editCardGroupId = null;
+
+  if(mode==="tx"){
+    modalTitle.textContent = payload?.title || "Novo lançamento";
+    formTx.style.display="block";
+    fillCats("txCat", payload?.categoria || "Outros");
+
+    // campos
+    document.getElementById("txTipo").value = payload?.tipo || "saida";
+    document.getElementById("txMeio").value = payload?.meio || "Pix";
+    document.getElementById("txData").value = payload?.data || new Date().toISOString().slice(0,10);
+    document.getElementById("txDesc").value = payload?.desc || "";
+    document.getElementById("txValor").value = payload?.valor ?? "";
+    document.getElementById("txParcelas").value = payload?.parcelas ?? 1;
+
+    // botao
+    document.getElementById("txSaveBtn").textContent = payload?.isEdit ? "Salvar alterações" : "Salvar";
+
+    // ids de edição
+    if(payload?.editTxId) editTxId = payload.editTxId;
+    if(payload?.editCardGroupId) editCardGroupId = payload.editCardGroupId;
   }
-  save();closeModal();render();
+
+  if(mode==="fixed"){
+    modalTitle.textContent = payload?.title || "Conta fixa";
+    formFixed.style.display="block";
+    fillCats("fxCat", payload?.categoria || "Contas");
+
+    document.getElementById("fxName").value = payload?.nome || "";
+    document.getElementById("fxValue").value = payload?.valor ?? "";
+    document.getElementById("fxDay").value = payload?.dia ?? 10;
+    document.getElementById("fxActive").value = payload?.ativa ? "1" : "0";
+    document.getElementById("fxSaveBtn").textContent = payload?.isEdit ? "Salvar alterações" : "Salvar";
+    if(payload?.editFixedId) editFixedId = payload.editFixedId;
+  }
+
+  if(mode==="goal"){
+    modalTitle.textContent = payload?.title || "Meta";
+    formGoal.style.display="block";
+    document.getElementById("goalName").value = payload?.nome || "";
+    document.getElementById("goalTarget").value = payload?.alvo ?? "";
+    document.getElementById("goalSaved").value = payload?.guardado ?? 0;
+    document.getElementById("goalSaveBtn").textContent = payload?.isEdit ? "Salvar alterações" : "Salvar";
+    if(payload?.editGoalId) editGoalId = payload.editGoalId;
+  }
+
+  if(mode==="budget"){
+    modalTitle.textContent = "Limite por categoria";
+    formBudget.style.display="block";
+    fillCats("bdCat");
+    document.getElementById("bdLimit").value = "";
+  }
+
+  if(mode==="settings"){
+    modalTitle.textContent = "Configurações";
+    formSettings.style.display="block";
+    document.getElementById("setSalary").value = state.salario;
+    document.getElementById("setCats").value = state.categorias.join(", ");
+  }
+
+  modal.style.display="flex";
+}
+
+function closeModal(){
+  modal.style.display="none";
+  modalMode = null;
+  editTxId = null; editFixedId = null; editGoalId = null; editCardGroupId = null;
+}
+
+/* ===== Save handlers ===== */
+function saveTx(){
+  const tipo = document.getElementById("txTipo").value;
+  const meio = document.getElementById("txMeio").value;
+  const categoria = document.getElementById("txCat").value;
+  const data = document.getElementById("txData").value;
+  const desc = document.getElementById("txDesc").value.trim();
+  const valor = Number(document.getElementById("txValor").value);
+  const parcelas = Math.max(1, Math.floor(Number(document.getElementById("txParcelas").value || 1)));
+
+  if(!data || !desc || !valor || valor<=0){
+    alert("Preencha data, descrição e valor.");
+    return;
+  }
+
+  // EDIT TX NORMAL (entrada/saida)
+  if(editTxId && tipo !== "cartao"){
+    const t = state.tx.find(x=>x.id===editTxId);
+    if(!t){ alert("Não encontrei esse lançamento pra editar."); return; }
+    t.tipo = tipo;
+    t.meio = meio;
+    t.categoria = categoria;
+    t.data = data;
+    t.mes = ymFromDate(data);
+    t.desc = desc;
+    t.valor = valor;
+    save(); closeModal(); render(); return;
+  }
+
+  // EDIT COMPRA NO CARTÃO (grupo)
+  if(editCardGroupId && tipo === "cartao"){
+    // remove parcelas antigas desse grupo
+    state.cartao = state.cartao.filter(p=>p.groupId !== editCardGroupId);
+    // recria com o mesmo groupId
+    createCardPurchase({
+      groupId: editCardGroupId,
+      desc, categoria, dataCompra: data, total: valor, parcelas
+    });
+    save(); closeModal(); render(); return;
+  }
+
+  // CRIAR NOVO
+  if(tipo === "cartao"){
+    createCardPurchase({
+      groupId: uid(),
+      desc, categoria, dataCompra: data, total: valor, parcelas
+    });
+  } else {
+    state.tx.push({
+      id: uid(),
+      tipo, meio, categoria,
+      valor,
+      data,
+      mes: ymFromDate(data),
+      desc
+    });
+  }
+
+  save(); closeModal(); render();
+}
+
+function createCardPurchase({groupId, desc, categoria, dataCompra, total, parcelas}){
+  const per = total / parcelas;
+  const start = new Date(dataCompra);
+
+  for(let i=0;i<parcelas;i++){
+    const dt = new Date(start);
+    dt.setMonth(dt.getMonth()+i);
+    const mes = `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}`;
+
+    state.cartao.push({
+      id: uid(),
+      groupId,
+      desc,
+      categoria,
+      valor: Number(per.toFixed(2)),
+      parcela: `${i+1}/${parcelas}`,
+      mes,
+      dataCompra,
+      total,
+      parcelas
+    });
+  }
+}
+
+function saveFixed(){
+  const nome = document.getElementById("fxName").value.trim();
+  const valor = Number(document.getElementById("fxValue").value);
+  const categoria = document.getElementById("fxCat").value;
+  const dia = Math.max(1, Math.min(31, Math.floor(Number(document.getElementById("fxDay").value || 10))));
+  const ativa = document.getElementById("fxActive").value === "1";
+
+  if(!nome || !valor || valor<=0){
+    alert("Preencha nome e valor.");
+    return;
+  }
+
+  if(editFixedId){
+    const f = state.fixos.find(x=>x.id===editFixedId);
+    if(!f){ alert("Não encontrei essa conta fixa pra editar."); return; }
+    f.nome = nome; f.valor = valor; f.categoria = categoria; f.dia = dia; f.ativa = ativa;
+    save(); closeModal(); render(); return;
+  }
+
+  state.fixos.push({id: uid(), nome, valor, categoria, dia, ativa});
+  save(); closeModal(); render();
+}
+
+function saveGoal(){
+  const nome = document.getElementById("goalName").value.trim();
+  const alvo = Number(document.getElementById("goalTarget").value);
+  const guardado = Number(document.getElementById("goalSaved").value || 0);
+
+  if(!nome || !alvo || alvo<=0){
+    alert("Preencha nome e valor alvo.");
+    return;
+  }
+
+  if(editGoalId){
+    const g = state.metas.find(x=>x.id===editGoalId);
+    if(!g){ alert("Não encontrei essa meta pra editar."); return; }
+    g.nome = nome; g.alvo = alvo; g.guardado = guardado;
+    save(); closeModal(); render(); return;
+  }
+
+  state.metas.push({id: uid(), nome, alvo, guardado});
+  save(); closeModal(); render();
+}
+
+function saveBudget(){
+  const cat = document.getElementById("bdCat").value;
+  const limit = Number(document.getElementById("bdLimit").value);
+  if(!limit || limit<=0){ alert("Informe um limite válido."); return; }
+  state.orcamento[cat] = limit;
+  save(); closeModal(); render();
+}
+
+function saveSettings(){
+  const sal = Number(document.getElementById("setSalary").value);
+  const cats = document.getElementById("setCats").value
+    .split(",").map(s=>s.trim()).filter(Boolean);
+
+  if(!sal || sal<=0){ alert("Salário inválido."); return; }
+  if(!cats.length){ alert("Informe pelo menos 1 categoria."); return; }
+
+  state.salario = sal;
+  state.categorias = cats;
+
+  // limpa orçamento de categorias removidas
+  const newBudget = {};
+  for(const c of cats) if(state.orcamento[c]) newBudget[c]=state.orcamento[c];
+  state.orcamento = newBudget;
+
+  save(); closeModal(); render();
+}
+
+/* ===== Edit / Delete actions ===== */
+function editTx(id){
+  const t = state.tx.find(x=>x.id===id);
+  if(!t) return;
+  openModal("tx", {
+    title: "Editar lançamento",
+    isEdit: true,
+    editTxId: t.id,
+    tipo: t.tipo,
+    meio: t.meio,
+    categoria: t.categoria,
+    data: t.data,
+    desc: t.desc,
+    valor: t.valor,
+    parcelas: 1
+  });
+}
+function delTx(id){
+  if(!confirm("Excluir este lançamento?")) return;
+  state.tx = state.tx.filter(t=>t.id!==id);
+  save(); render();
+}
+
+function editFixed(id){
+  const f = state.fixos.find(x=>x.id===id);
+  if(!f) return;
+  openModal("fixed", {
+    title: "Editar conta fixa",
+    isEdit: true,
+    editFixedId: f.id,
+    nome: f.nome,
+    valor: f.valor,
+    categoria: f.categoria,
+    dia: f.dia,
+    ativa: f.ativa
+  });
+}
+function delFixed(id){
+  if(!confirm("Excluir esta conta fixa?")) return;
+  state.fixos = state.fixos.filter(f=>f.id!==id);
+  save(); render();
+}
+function toggleFixed(id){
+  const f = state.fixos.find(x=>x.id===id);
+  if(!f) return;
+  f.ativa = !f.ativa;
+  save(); render();
+}
+
+function editGoal(id){
+  const g = state.metas.find(x=>x.id===id);
+  if(!g) return;
+  openModal("goal", {
+    title: "Editar meta",
+    isEdit: true,
+    editGoalId: g.id,
+    nome: g.nome,
+    alvo: g.alvo,
+    guardado: g.guardado
+  });
+}
+function delGoal(id){
+  if(!confirm("Excluir esta meta?")) return;
+  state.metas = state.metas.filter(g=>g.id!==id);
+  save(); render();
+}
+function addToGoal(id){
+  const g = state.metas.find(x=>x.id===id);
+  if(!g) return;
+  const v = Number(prompt(`Aporte para "${g.nome}" (R$):`, "100"));
+  if(!v || v<=0) return;
+  g.guardado = Number((Number(g.guardado||0) + v).toFixed(2));
+  save(); render();
+}
+
+function getCardGroupsForMonth(ym){
+  const list = monthCard(ym);
+  const map = {};
+  for(const p of list){
+    if(!map[p.groupId]) map[p.groupId]=[];
+    map[p.groupId].push(p);
+  }
+  const groups = Object.entries(map).map(([groupId, arr])=>{
+    // todas as parcelas compartilham os metadados (total/parcelas/desc etc)
+    const sample = arr[0];
+    return {
+      groupId,
+      desc: sample.desc,
+      categoria: sample.categoria,
+      dataCompra: sample.dataCompra,
+      total: sample.total,
+      parcelas: sample.parcelas,
+      parcelasNoMes: arr
+    };
+  });
+  return groups;
+}
+
+function editCardPurchase(groupId){
+  // pega "amostra" da compra
+  const any = state.cartao.find(p=>p.groupId===groupId);
+  if(!any) return;
+  openModal("tx", {
+    title: "Editar compra no cartão",
+    isEdit: true,
+    editCardGroupId: groupId,
+    tipo: "cartao",
+    meio: "Crédito",
+    categoria: any.categoria || "Outros",
+    data: any.dataCompra || new Date().toISOString().slice(0,10),
+    desc: any.desc || "",
+    valor: any.total || (Number(any.valor||0) * Number(any.parcelas||1)),
+    parcelas: any.parcelas || 1
+  });
+  document.getElementById("txTipo").value = "cartao";
+}
+
+function delCardPurchase(groupId){
+  if(!confirm("Excluir a compra do cartão (todas as parcelas)?")) return;
+  state.cartao = state.cartao.filter(p=>p.groupId!==groupId);
+  save(); render();
+}
+
+/* ===== Export / Reset ===== */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "financecontrol_backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function resetAll(){
+  if(!confirm("Tem certeza que quer zerar tudo?")) return;
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(KEY+"_month");
+  state = load();
+  selectedMonth = monthNow();
+  localStorage.setItem(KEY+"_month", selectedMonth);
+  render();
+}
+
+/* ===== Render ===== */
+function renderTop(){
+  const months = getMonthOptions();
+  if(!months.includes(selectedMonth)){
+    selectedMonth = months[months.length-1] || monthNow();
+    localStorage.setItem(KEY+"_month", selectedMonth);
+  }
+
+  const sel = document.getElementById("monthSel");
+  sel.innerHTML = months.map(m=>`<option value="${m}" ${m===selectedMonth?"selected":""}>${monthLabel(m)}</option>`).join("");
+  sel.onchange = (e)=>{
+    selectedMonth = e.target.value;
+    localStorage.setItem(KEY+"_month", selectedMonth);
+    render();
+  };
+
+  document.getElementById("salaryLabel").textContent = money(state.salario);
+
+  const t = totalsForMonth(selectedMonth);
+  const totalTargets = sum(state.metas,"alvo");
+  const totalSaved = sum(state.metas,"guardado");
+
+  document.getElementById("sideMonth").textContent = monthLabel(selectedMonth);
+  document.getElementById("sideCommitted").textContent = money(t.comprometido);
+  document.getElementById("sideLeft").textContent = money(t.sobrando);
+  document.getElementById("sideGoals").textContent = `${money(totalSaved)} / ${money(totalTargets)}`;
+}
+
+function estimateMonths(goal, monthlyCap){
+  const remain = Math.max(0, Number(goal.alvo) - Number(goal.guardado||0));
+  if(remain<=0) return 0;
+  if(monthlyCap<=0) return null;
+  return Math.ceil(remain / monthlyCap);
+}
+
+function renderOverview(){
+  const t = totalsForMonth(selectedMonth);
+  const spend = spendingByCategory(selectedMonth);
+  const cap = Math.max(0, t.sobrando);
+
+  const entries = Object.entries(spend).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // dica simples
+  let tip = "Cadastre metas (PC/carro/reserva) pra o sistema calcular o prazo.";
+  if(state.metas.length){
+    const g = state.metas[0];
+    const m = estimateMonths(g, cap);
+    if(m === 0) tip = `Meta "${g.nome}" concluída.`;
+    else if(m == null) tip = `Sem sobra no mês agora. Ajuste orçamento/contas/cartão.`;
+    else tip = `No ritmo atual, você conclui "${g.nome}" em ~${m} mês(es).`;
+  }
+
+  overview.innerHTML = `
+    <div class="grid">
+      <div class="card span3">
+        <div class="label">Sobrando no mês</div>
+        <div class="value ${t.sobrando>=0?"good":"bad"}">${money(t.sobrando)}</div>
+        <div class="sub">Salário + entradas − saídas − (fixos + cartão)</div>
+      </div>
+
+      <div class="card span3">
+        <div class="label">Comprometido</div>
+        <div class="value bad">${money(t.comprometido)}</div>
+        <div class="sub">Fixos: ${money(t.fixosTotal)} • Cartão: ${money(t.cartaoTotal)}</div>
+      </div>
+
+      <div class="card span3">
+        <div class="label">Entradas</div>
+        <div class="value good">${money(t.entradas)}</div>
+        <div class="sub">Somente lançamentos do mês</div>
+      </div>
+
+      <div class="card span3">
+        <div class="label">Saídas</div>
+        <div class="value bad">${money(t.saidas)}</div>
+        <div class="sub">Sem contar fixos e cartão</div>
+      </div>
+
+      <div class="card span7">
+        <div class="split">
+          <div>
+            <h3 class="title">Gastos por categoria</h3>
+            <div class="sub">Inclui saídas + fixos + parcelas do cartão</div>
+          </div>
+          <button class="btnWarn" onclick="openModal('budget')">Definir limites</button>
+        </div>
+
+        <table style="margin-top:10px">
+          <tr><th>Categoria</th><th>Gasto</th><th>Limite</th><th>Status</th></tr>
+          ${entries.map(([cat,val])=>{
+            const lim = Number(state.orcamento?.[cat]||0);
+            const pct = lim>0 ? (val/lim) : null;
+            const status = lim>0
+              ? (pct>=1 ? `<span class="tag"><span class="dot" style="background:var(--bad)"></span> Estourou</span>`
+                : pct>=0.8 ? `<span class="tag"><span class="dot" style="background:var(--warn)"></span> Atenção</span>`
+                : `<span class="tag"><span class="dot" style="background:var(--good)"></span> Ok</span>`)
+              : `<span class="tag">sem limite</span>`;
+            return `
+              <tr>
+                <td>${cat}</td>
+                <td class="bad">${money(val)}</td>
+                <td>${lim>0?money(lim):"—"}</td>
+                <td>${status}</td>
+              </tr>
+            `;
+          }).join("")}
+        </table>
+      </div>
+
+      <div class="card span5">
+        <h3 class="title">Leitura rápida</h3>
+        <div class="sub" style="margin-top:6px">${tip}</div>
+        <div style="margin-top:12px" class="split">
+          <button class="btnGood" onclick="openModal('goal')">+ Meta</button>
+          <button onclick="openModal('fixed')">+ Conta fixa</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderGoals(){
+  const t = totalsForMonth(selectedMonth);
+  const cap = Math.max(0, t.sobrando);
+
+  goals.innerHTML = `
+    <div class="split" style="margin-bottom:12px">
+      <div>
+        <h2 class="title" style="margin:0">Metas</h2>
+        <div class="sub">Aportes + previsão com base no seu “sobrando” do mês.</div>
+      </div>
+      <button class="btnGood" onclick="openModal('goal')">+ Nova meta</button>
+    </div>
+
+    <div class="grid">
+      ${state.metas.map(g=>{
+        const pct = Math.min(100, Math.round((Number(g.guardado||0) / Number(g.alvo||1))*100));
+        const remain = Math.max(0, Number(g.alvo) - Number(g.guardado||0));
+        const months = estimateMonths(g, cap);
+        const when = months===0 ? "Concluída" : (months==null ? "Sem previsão" : `~${months} mês(es)`);
+        return `
+          <div class="card span6">
+            <div class="split">
+              <div>
+                <div class="label">${g.nome}</div>
+                <div class="value" style="font-size:18px">${money(g.guardado)} <span class="muted">/ ${money(g.alvo)}</span></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                <button class="btnGood" onclick="addToGoal('${g.id}')">+ Aporte</button>
+                <button onclick="editGoal('${g.id}')">Editar</button>
+                <button class="btnBad" onclick="delGoal('${g.id}')">Excluir</button>
+              </div>
+            </div>
+            <div class="progress" style="margin-top:12px"><div class="bar" style="width:${pct}%"></div></div>
+            <div class="split" style="margin-top:10px">
+              <span class="tag">${pct}% • Falta ${money(remain)}</span>
+              <span class="tag">Previsão: ${when}</span>
+            </div>
+          </div>
+        `;
+      }).join("") || `
+        <div class="card span12">
+          <h2 class="title" style="margin:0">Sem metas ainda</h2>
+          <div class="sub">Crie “PC novo”, “Carro”, “Reserva”… e acompanhe o progresso.</div>
+          <div style="margin-top:12px"><button class="btnGood" onclick="openModal('goal')">+ Criar meta</button></div>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function renderBudget(){
+  const spend = spendingByCategory(selectedMonth);
+  const rows = state.categorias.map(cat=>{
+    const gasto = Number(spend[cat]||0);
+    const lim = Number(state.orcamento?.[cat]||0);
+    const pct = lim>0 ? gasto/lim : null;
+    const status = lim>0 ? (pct>=1?"Estourou":pct>=0.8?"Atenção":"Ok") : "Sem limite";
+    const cls = lim>0 ? (pct>=1?"bad":pct>=0.8?"warn":"good") : "muted";
+    return {cat,gasto,lim,status,cls};
+  }).sort((a,b)=>b.gasto-a.gasto);
+
+  budget.innerHTML = `
+    <div class="split" style="margin-bottom:12px">
+      <div>
+        <h2 class="title" style="margin:0">Orçamento</h2>
+        <div class="sub">Defina limites por categoria pra “amenizar” os vazamentos.</div>
+      </div>
+      <button class="btnWarn" onclick="openModal('budget')">+ Definir limite</button>
+    </div>
+    <div class="card">
+      <table>
+        <tr><th>Categoria</th><th>Gasto</th><th>Limite</th><th>Faltando</th><th>Status</th></tr>
+        ${rows.map(r=>{
+          const falt = r.lim>0 ? Math.max(0, r.lim-r.gasto) : null;
+          return `
+            <tr>
+              <td>${r.cat}</td>
+              <td class="bad">${money(r.gasto)}</td>
+              <td>${r.lim>0?money(r.lim):"—"}</td>
+              <td>${r.lim>0?money(falt):"—"}</td>
+              <td class="${r.cls}">${r.status}</td>
+            </tr>
+          `;
+        }).join("")}
+      </table>
+    </div>
+  `;
+}
+
+function renderFixed(){
+  const list = [...state.fixos].sort((a,b)=>a.dia-b.dia);
+
+  fixed.innerHTML = `
+    <div class="split" style="margin-bottom:12px">
+      <div>
+        <h2 class="title" style="margin:0">Contas fixas</h2>
+        <div class="sub">Internet, academia, assinaturas… você edita e pausa quando quiser.</div>
+      </div>
+      <button onclick="openModal('fixed')" class="btnPrimary">+ Conta fixa</button>
+    </div>
+
+    <div class="card">
+      <table>
+        <tr><th>Conta</th><th>Categoria</th><th>Venc.</th><th>Valor</th><th>Status</th><th>Ações</th></tr>
+        ${list.map(f=>`
+          <tr>
+            <td>${f.nome}</td>
+            <td><span class="tag">${f.categoria}</span></td>
+            <td>Dia ${f.dia}</td>
+            <td class="bad">${money(f.valor)}</td>
+            <td>${f.ativa ? `<span class="tag"><span class="dot" style="background:var(--good)"></span> Ativa</span>` : `<span class="tag"><span class="dot" style="background:var(--muted)"></span> Pausada</span>`}</td>
+            <td style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btnGhost" onclick="toggleFixed('${f.id}')">${f.ativa?"Pausar":"Ativar"}</button>
+              <button onclick="editFixed('${f.id}')">Editar</button>
+              <button class="btnBad" onclick="delFixed('${f.id}')">Excluir</button>
+            </td>
+          </tr>
+        `).join("") || `<tr><td colspan="6" class="muted">Nenhuma conta fixa cadastrada.</td></tr>`}
+      </table>
+    </div>
+  `;
+}
+
+function renderCards(){
+  const list = monthCard(selectedMonth);
+  const totalMes = sum(list);
+
+  const groups = getCardGroupsForMonth(selectedMonth);
+
+  cards.innerHTML = `
+    <div class="split" style="margin-bottom:12px">
+      <div>
+        <h2 class="title" style="margin:0">Cartão / Fatura</h2>
+        <div class="sub">Fatura do mês com parcelas. Você pode editar ou excluir a compra inteira.</div>
+      </div>
+      <button class="btnPrimary" onclick="openModal('tx', {tipo:'cartao', meio:'Crédito', parcelas:1})">+ Compra no cartão</button>
+    </div>
+
+    <div class="grid">
+      <div class="card span4">
+        <div class="label">Total da fatura (mês)</div>
+        <div class="value bad">${money(totalMes)}</div>
+        <div class="sub">Somatório das parcelas deste mês</div>
+      </div>
+
+      <div class="card span8">
+        <div class="split">
+          <div>
+            <div class="label">Compras que aparecem no mês</div>
+            <div class="sub">Agrupadas por compra</div>
+          </div>
+        </div>
+
+        <table style="margin-top:10px">
+          <tr><th>Compra</th><th>Categoria</th><th>Parcelas</th><th>Parcela no mês</th><th>Ações</th></tr>
+          ${groups.map(g=>{
+            const p = g.parcelasNoMes[0]; // amostra do mês
+            const parcelaMes = `${p.parcela} • ${money(p.valor)}`;
+            return `
+              <tr>
+                <td>${g.desc}</td>
+                <td><span class="tag">${g.categoria || "Outros"}</span></td>
+                <td>${g.parcelas}x • Total ${money(g.total)}</td>
+                <td class="bad">${parcelaMes}</td>
+                <td style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button onclick="editCardPurchase('${g.groupId}')">Editar</button>
+                  <button class="btnBad" onclick="delCardPurchase('${g.groupId}')">Excluir</button>
+                </td>
+              </tr>
+            `;
+          }).join("") || `<tr><td colspan="5" class="muted">Sem parcelas neste mês.</td></tr>`}
+        </table>
+      </div>
+
+      <div class="card span12">
+        <div class="split">
+          <div>
+            <h3 class="title" style="margin:0">Parcelas do mês (detalhado)</h3>
+            <div class="sub">Tudo que compõe a fatura deste mês</div>
+          </div>
+        </div>
+        <table style="margin-top:10px">
+          <tr><th>Descrição</th><th>Categoria</th><th>Parcela</th><th>Valor</th></tr>
+          ${list.map(p=>`
+            <tr>
+              <td>${p.desc}</td>
+              <td><span class="tag">${p.categoria || "Outros"}</span></td>
+              <td>${p.parcela}</td>
+              <td class="bad">${money(p.valor)}</td>
+            </tr>
+          `).join("") || `<tr><td colspan="4" class="muted">Sem parcelas neste mês.</td></tr>`}
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderTx(){
+  const txList = [...monthTx(selectedMonth)].sort((a,b)=>a.data.localeCompare(b.data));
+  const t = totalsForMonth(selectedMonth);
+
+  tx.innerHTML = `
+    <div class="split" style="margin-bottom:12px">
+      <div>
+        <h2 class="title" style="margin:0">Lançamentos</h2>
+        <div class="sub">Entradas/saídas do mês. Aqui você edita e exclui quando quiser.</div>
+      </div>
+      <button class="btnPrimary" onclick="openModal('tx')">+ Lançamento</button>
+    </div>
+
+    <div class="grid">
+      <div class="card span6">
+        <div class="label">Entradas do mês</div>
+        <div class="value good">${money(t.entradas)}</div>
+      </div>
+      <div class="card span6">
+        <div class="label">Saídas do mês</div>
+        <div class="value bad">${money(t.saidas)}</div>
+      </div>
+
+      <div class="card span12">
+        <table>
+          <tr><th>Data</th><th>Tipo</th><th>Meio</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr>
+          ${txList.map(x=>`
+            <tr>
+              <td>${x.data}</td>
+              <td><span class="tag">${x.tipo}</span></td>
+              <td>${x.meio}</td>
+              <td><span class="tag">${x.categoria || "Outros"}</span></td>
+              <td>${x.desc}</td>
+              <td class="${x.tipo==='entrada'?'good':'bad'}">${money(x.valor)}</td>
+              <td style="display:flex;gap:8px;flex-wrap:wrap">
+                <button onclick="editTx('${x.id}')">Editar</button>
+                <button class="btnBad" onclick="delTx('${x.id}')">Excluir</button>
+              </td>
+            </tr>
+          `).join("") || `<tr><td colspan="7" class="muted">Sem lançamentos neste mês.</td></tr>`}
+        </table>
+      </div>
+    </div>
+  `;
 }
 
 function render(){
-  const entradas=state.tx.filter(t=>t.tipo==='entrada').reduce((a,b)=>a+b.valor,0);
-  const saidas=state.tx.filter(t=>t.tipo==='saida').reduce((a,b)=>a+b.valor,0);
-  const cart=state.cartao.reduce((a,b)=>a+b.valor,0);
+  renderTop();
 
-  dash.innerHTML=`
-    <button onclick="openModal()">+ Lançamento</button>
-    <div class="cards">
-      <div class="card"><div class="label">Saldo</div><div class="value">${money(state.salario+entradas-saidas)}</div></div>
-      <div class="card"><div class="label">Entradas</div><div class="value good">${money(entradas)}</div></div>
-      <div class="card"><div class="label">Saídas</div><div class="value bad">${money(saidas)}</div></div>
-      <div class="card"><div class="label">Cartão</div><div class="value bad">${money(cart)}</div></div>
-    </div>
-  `;
-
-  fatura.innerHTML=`
-    <h2>Fatura do Cartão</h2>
-    <table>
-      <tr><th>Descrição</th><th>Parcela</th><th>Valor</th></tr>
-      ${state.cartao.map(c=>`<tr><td>${c.desc}</td><td>${c.parcela}</td><td class="bad">${money(c.valor)}</td></tr>`).join('')}
-    </table>
-  `;
-
-  lanc.innerHTML=`
-    <h2>Lançamentos</h2>
-    <table>
-      <tr><th>Tipo</th><th>Meio</th><th>Descrição</th><th>Valor</th></tr>
-      ${state.tx.map(t=>`<tr><td>${t.tipo}</td><td>${t.meio}</td><td>${t.desc}</td><td>${money(t.valor)}</td></tr>`).join('')}
-    </table>
-  `;
+  if(view==="overview") renderOverview();
+  if(view==="goals") renderGoals();
+  if(view==="budget") renderBudget();
+  if(view==="fixed") renderFixed();
+  if(view==="cards") renderCards();
+  if(view==="tx") renderTx();
 }
 
-const tipoEl=document.getElementById('tipo');
-const meioEl=document.getElementById('meio');
+/* init */
 render();
 </script>
 </body>
