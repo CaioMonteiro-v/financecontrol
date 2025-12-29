@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>FinanceControl • Metas, Contas, Parcelas</title>
+  <title>FinanceControl • Metas, Contas, Parcelas + IA</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -132,11 +132,7 @@
     .warn{color:var(--warn)}
     .muted{color:var(--muted)}
     .split{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .title{
-      margin:0;
-      font-size:18px;
-      letter-spacing:-0.2px;
-    }
+    .title{margin:0;font-size:18px;letter-spacing:-0.2px}
     .sub{font-size:12px;color:var(--muted);margin-top:4px}
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px}
@@ -154,15 +150,16 @@
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .row1{display:grid;grid-template-columns:1fr;gap:10px}
 
-    /* Modal */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:14px;z-index:20}
     .modalBox{
-      width:100%;max-width:620px;
+      width:100%;max-width:760px;
       border-radius:26px;
       background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
       border:1px solid var(--line);
       box-shadow:var(--shadow);
       padding:16px;
+      max-height:90vh;
+      overflow:auto;
     }
     .modalHeader{display:flex;justify-content:space-between;align-items:center;gap:10px}
     .modalHeader h2{margin:0;font-size:16px}
@@ -184,7 +181,7 @@
       <div class="logo">FC</div>
       <div>
         <h1>FinanceControl</h1>
-        <p>metas • sobras • parcelas • contas</p>
+        <p>metas • sobras • parcelas • contas • IA</p>
       </div>
     </div>
 
@@ -228,6 +225,8 @@
       <div class="actions">
         <button class="btnPrimary" onclick="openModal('tx')">+ Lançamento</button>
         <button class="btnGood" onclick="openModal('goal')">+ Meta</button>
+        <button class="btnGhost" onclick="openAIReport()">🤖 Analisar mês</button>
+        <button class="btnWarn" onclick="closeMonth()">🔒 Fechar mês</button>
         <button class="btnGhost" onclick="exportData()">Exportar</button>
         <button class="btnBad" onclick="resetAll()">Zerar</button>
       </div>
@@ -269,6 +268,16 @@
         <select id="txCat"></select>
         <input id="txData" type="date" />
       </div>
+
+      <!-- FORÇAR MÊS SELECIONADO -->
+      <div class="pill" style="margin-top:10px;justify-content:space-between">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <b style="font-size:12px">Forçar mês selecionado</b>
+          <span class="muted" style="font-size:12px">O lançamento sempre entra em <span id="forceMonthLabel">—</span></span>
+        </div>
+        <input id="txForceMonth" type="checkbox" checked style="width:18px;height:18px"/>
+      </div>
+
       <div class="row1" style="margin-top:10px">
         <input id="txDesc" placeholder="Descrição (ex: Mercado, Gasolina, Netflix)" />
       </div>
@@ -341,32 +350,94 @@
         <input id="setSalary" type="number" placeholder="Seu salário (R$)" />
         <input id="setCats" placeholder="Categorias (separadas por vírgula)" />
       </div>
-      <div class="hint">Ex: Alimentação, Combustível, Lazer, Contas, Saúde, Outros</div>
+
+      <div class="row2" style="margin-top:10px">
+        <input id="setMetaMin" type="number" placeholder="Meta mínima (guardar) (R$)" />
+        <input id="setMetaMax" type="number" placeholder="Meta máxima (guardar) (R$)" />
+      </div>
+
+      <div class="hint">
+        Categorias exemplo: Alimentação, Combustível, Lazer, Contas, Saúde, Outros<br/>
+        Meta (IA) é flexível: ela recomenda Tranquilo x Forte, e você não fica travado num número fixo.
+      </div>
+
       <div class="modalFooter">
         <button onclick="closeModal()">Cancelar</button>
         <button class="btnPrimary" onclick="saveSettings()">Salvar</button>
       </div>
     </div>
+
+    <!-- AI REPORT -->
+    <div id="formAI" style="display:none;margin-top:12px">
+      <div class="card" style="box-shadow:none">
+        <h3 class="title" style="margin:0">Relatório do mês</h3>
+        <div class="sub" id="aiSub" style="margin-top:6px">—</div>
+
+        <div class="grid" style="margin-top:12px">
+          <div class="card span6" style="box-shadow:none">
+            <div class="label">Disponível real (antes de guardar)</div>
+            <div class="value" id="aiDisponivel">—</div>
+            <div class="sub">Salário + entradas − saídas − (fixos + cartão)</div>
+          </div>
+
+          <div class="card span6" style="box-shadow:none">
+            <div class="label">Limite seguro no cartão (a partir de agora)</div>
+            <div class="value" id="aiLimiteCartao">—</div>
+            <div class="sub">Já desconta meta + margem</div>
+          </div>
+
+          <div class="card span6" style="box-shadow:none">
+            <div class="label">Guardar (Tranquilo)</div>
+            <div class="value" id="aiSaveT">—</div>
+            <div class="sub" id="aiSaveTSub">—</div>
+          </div>
+
+          <div class="card span6" style="box-shadow:none">
+            <div class="label">Guardar (Forte)</div>
+            <div class="value" id="aiSaveF">—</div>
+            <div class="sub" id="aiSaveFSub">—</div>
+          </div>
+
+          <div class="card span12" style="box-shadow:none">
+            <h3 class="title" style="margin:0">Onde deu pra “amenizar”</h3>
+            <div class="sub" id="aiCuts" style="margin-top:6px">—</div>
+          </div>
+        </div>
+
+        <div class="modalFooter" style="margin-top:12px">
+          <button class="btnGhost" onclick="closeModal()">Fechar</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
 /* ==========================
-   FinanceControl (layout novo + CRUD completo)
+   FinanceControl (CRUD + IA + Fechar mês + Forçar mês selecionado)
    ========================== */
 const KEY = "finance_control_crud_v2";
 
+
+/* default */
 const defaultState = {
   salario: 3450,
   categorias: ["Alimentação","Combustível","Lazer","Contas","Saúde","Outros"],
   tx: [],        // {id,tipo,meio,categoria,valor,data,mes,desc}
-  cartao: [],    // parcelas: {id, groupId, desc, categoria, valor, parcela, mes, faturaMes, dataCompra, total, parcelas}
+  cartao: [],    // parcelas: {id, groupId, desc, categoria, valor, parcela, mes, dataCompra, total, parcelas}
   fixos: [],     // {id,nome,valor,categoria,dia,ativa}
   metas: [],     // {id,nome,alvo,guardado}
   orcamento: {}, // {categoria: limite}
 
-  // ✅ NOVO: config do cartão (fechamento/vencimento)
-  cartaoCfg: { fechamentoDia: 20, vencimentoDia: 5 }
+  // IA / fechamento de mês
+  ia: {
+    metaMin: 1500,
+    metaMax: 2000,
+    margemSeguranca: 150,
+    ultModo: "tranquilo" // tranquilo | forte
+  },
+  mesesFechados: {} // "YYYY-MM": {snapshot, relatorio}
 };
 
 const load = () => {
@@ -379,11 +450,11 @@ const load = () => {
       ...s,
       categorias: Array.isArray(s.categorias) && s.categorias.length ? s.categorias : structuredClone(defaultState.categorias),
       orcamento: s.orcamento && typeof s.orcamento === "object" ? s.orcamento : {},
-
-      // ✅ NOVO: preserva config do cartão (se não existir, usa padrão)
-      cartaoCfg: s.cartaoCfg && typeof s.cartaoCfg === "object"
-        ? s.cartaoCfg
-        : structuredClone(defaultState.cartaoCfg),
+      ia: {
+        ...structuredClone(defaultState.ia),
+        ...(s.ia || {})
+      },
+      mesesFechados: (s.mesesFechados && typeof s.mesesFechados === "object") ? s.mesesFechados : {}
     };
   }catch{
     return structuredClone(defaultState);
@@ -412,21 +483,26 @@ const monthLabel = (ym) => {
 };
 const money = (v) => (Number(v||0)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const sum = (arr, key="valor") => arr.reduce((a,b)=>a+Number(b[key]||0),0);
+function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
-/* ==========================
-   ✅ NOVO: FATURA ESTILO BANCO (fechamento dia 20)
-   ========================== */
-function addMonthsYM(ym, add){
-  const [y0,m0] = ym.split("-").map(Number);
-  const d = new Date(y0, (m0-1) + add, 1);
-  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+function defaultDateForMonth(ym){
+  // retorna YYYY-MM-DD dentro do mês selecionado, usando o dia de hoje (ou último dia do mês)
+  const today = new Date();
+  const [y,m] = ym.split("-");
+  const day = today.getDate();
+  const lastDay = new Date(Number(y), Number(m), 0).getDate();
+  const safeDay = Math.min(day, lastDay);
+  return `${y}-${pad2(m)}-${pad2(safeDay)}`;
 }
-function faturaMesByDate(dateStr){
-  const fechamento = Number(state.cartaoCfg?.fechamentoDia || 20);
-  const d = new Date(dateStr + "T00:00:00");
-  const ym = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-  // após o fechamento → fatura do mês seguinte
-  return d.getDate() > fechamento ? addMonthsYM(ym, 1) : ym;
+
+function forceDateToSelectedMonth(dateStr, selectedYM){
+  if(!dateStr || !selectedYM) return dateStr;
+  const [y,m] = selectedYM.split("-");
+  const d = (dateStr.split("-")[2] || "01");
+  const day = Number(d || 1);
+  const lastDay = new Date(Number(y), Number(m), 0).getDate();
+  const safeDay = String(Math.min(day, lastDay)).padStart(2,"0");
+  return `${y}-${pad2(m)}-${safeDay}`;
 }
 
 /* Month selection */
@@ -449,19 +525,12 @@ function setView(v){
 function getMonthOptions(){
   const set = new Set([monthNow()]);
   state.tx.forEach(t=> set.add(t.mes || ymFromDate(t.data)));
-
-  // ✅ ALTERADO: meses do cartão agora usam faturaMes (fallback para mes antigo)
-  state.cartao.forEach(p=> set.add(normalizeYM(p.faturaMes || p.mes)));
-
+  state.cartao.forEach(p=> set.add(normalizeYM(p.mes)));
+  Object.keys(state.mesesFechados || {}).forEach(m=> set.add(m));
   return Array.from(set).filter(Boolean).sort();
 }
 function monthTx(ym){ return state.tx.filter(t => (t.mes || ymFromDate(t.data)) === ym); }
-
-// ✅ ALTERADO: cartão agora filtra pelo mês da fatura (banco)
-function monthCard(ym){
-  return state.cartao.filter(p => normalizeYM(p.faturaMes || p.mes) === ym);
-}
-
+function monthCard(ym){ return state.cartao.filter(p => normalizeYM(p.mes) === ym); }
 function monthFixed(){ return state.fixos.filter(f => f.ativa); }
 
 function totalsForMonth(ym){
@@ -500,6 +569,7 @@ const formFixed = document.getElementById("formFixed");
 const formGoal = document.getElementById("formGoal");
 const formBudget = document.getElementById("formBudget");
 const formSettings = document.getElementById("formSettings");
+const formAI = document.getElementById("formAI");
 
 let modalMode = null;
 
@@ -510,7 +580,7 @@ let editGoalId = null;
 let editCardGroupId = null;   // compra no cartão (grupo)
 
 function hideAllForms(){
-  [formTx,formFixed,formGoal,formBudget,formSettings].forEach(f=>f.style.display="none");
+  [formTx,formFixed,formGoal,formBudget,formSettings,formAI].forEach(f=>f.style.display="none");
 }
 
 function fillCats(selectId, defaultValue=null){
@@ -531,10 +601,17 @@ function openModal(mode, payload=null){
     formTx.style.display="block";
     fillCats("txCat", payload?.categoria || "Outros");
 
+    // Forçar mês: ON por padrão
+    document.getElementById("txForceMonth").checked = true;
+    document.getElementById("forceMonthLabel").textContent = monthLabel(selectedMonth);
+
     // campos
     document.getElementById("txTipo").value = payload?.tipo || "saida";
     document.getElementById("txMeio").value = payload?.meio || "Pix";
-    document.getElementById("txData").value = payload?.data || new Date().toISOString().slice(0,10);
+
+    // data: se não vier payload.data, usa dia de hoje dentro do mês selecionado
+    document.getElementById("txData").value = payload?.data || defaultDateForMonth(selectedMonth);
+
     document.getElementById("txDesc").value = payload?.desc || "";
     document.getElementById("txValor").value = payload?.valor ?? "";
     document.getElementById("txParcelas").value = payload?.parcelas ?? 1;
@@ -582,6 +659,8 @@ function openModal(mode, payload=null){
     formSettings.style.display="block";
     document.getElementById("setSalary").value = state.salario;
     document.getElementById("setCats").value = state.categorias.join(", ");
+    document.getElementById("setMetaMin").value = state.ia?.metaMin ?? 1500;
+    document.getElementById("setMetaMax").value = state.ia?.metaMax ?? 2000;
   }
 
   modal.style.display="flex";
@@ -608,6 +687,13 @@ function saveTx(){
     return;
   }
 
+  // Forçar mês selecionado (padrão ON)
+  const force = document.getElementById("txForceMonth")?.checked;
+  let finalData = data;
+  if(force){
+    finalData = forceDateToSelectedMonth(data, selectedMonth);
+  }
+
   // EDIT TX NORMAL (entrada/saida)
   if(editTxId && tipo !== "cartao"){
     const t = state.tx.find(x=>x.id===editTxId);
@@ -615,8 +701,8 @@ function saveTx(){
     t.tipo = tipo;
     t.meio = meio;
     t.categoria = categoria;
-    t.data = data;
-    t.mes = ymFromDate(data);
+    t.data = finalData;
+    t.mes = ymFromDate(finalData);
     t.desc = desc;
     t.valor = valor;
     save(); closeModal(); render(); return;
@@ -624,12 +710,10 @@ function saveTx(){
 
   // EDIT COMPRA NO CARTÃO (grupo)
   if(editCardGroupId && tipo === "cartao"){
-    // remove parcelas antigas desse grupo
     state.cartao = state.cartao.filter(p=>p.groupId !== editCardGroupId);
-    // recria com o mesmo groupId
     createCardPurchase({
       groupId: editCardGroupId,
-      desc, categoria, dataCompra: data, total: valor, parcelas
+      desc, categoria, dataCompra: finalData, total: valor, parcelas
     });
     save(); closeModal(); render(); return;
   }
@@ -638,15 +722,15 @@ function saveTx(){
   if(tipo === "cartao"){
     createCardPurchase({
       groupId: uid(),
-      desc, categoria, dataCompra: data, total: valor, parcelas
+      desc, categoria, dataCompra: finalData, total: valor, parcelas
     });
   } else {
     state.tx.push({
       id: uid(),
       tipo, meio, categoria,
       valor,
-      data,
-      mes: ymFromDate(data),
+      data: finalData,
+      mes: ymFromDate(finalData),
       desc
     });
   }
@@ -661,12 +745,7 @@ function createCardPurchase({groupId, desc, categoria, dataCompra, total, parcel
   for(let i=0;i<parcelas;i++){
     const dt = new Date(start);
     dt.setMonth(dt.getMonth()+i);
-
     const mes = `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}`;
-
-    // ✅ NOVO: mês de fatura estilo banco
-    const dataParcela = dt.toISOString().slice(0,10);
-    const faturaMes = faturaMesByDate(dataParcela);
 
     state.cartao.push({
       id: uid(),
@@ -676,7 +755,6 @@ function createCardPurchase({groupId, desc, categoria, dataCompra, total, parcel
       valor: Number(per.toFixed(2)),
       parcela: `${i+1}/${parcelas}`,
       mes,
-      faturaMes,  // ✅ NOVO
       dataCompra,
       total,
       parcelas
@@ -741,11 +819,19 @@ function saveSettings(){
   const cats = document.getElementById("setCats").value
     .split(",").map(s=>s.trim()).filter(Boolean);
 
+  const metaMin = Number(document.getElementById("setMetaMin").value || 1500);
+  const metaMax = Number(document.getElementById("setMetaMax").value || 2000);
+
   if(!sal || sal<=0){ alert("Salário inválido."); return; }
   if(!cats.length){ alert("Informe pelo menos 1 categoria."); return; }
+  if(!metaMin || metaMin<0 || !metaMax || metaMax<metaMin){ alert("Meta min/max inválida."); return; }
 
   state.salario = sal;
   state.categorias = cats;
+
+  // IA
+  state.ia.metaMin = metaMin;
+  state.ia.metaMax = metaMax;
 
   // limpa orçamento de categorias removidas
   const newBudget = {};
@@ -862,7 +948,7 @@ function editCardPurchase(groupId){
     tipo: "cartao",
     meio: "Crédito",
     categoria: any.categoria || "Outros",
-    data: any.dataCompra || new Date().toISOString().slice(0,10),
+    data: any.dataCompra || defaultDateForMonth(selectedMonth),
     desc: any.desc || "",
     valor: any.total || (Number(any.valor||0) * Number(any.parcelas||1)),
     parcelas: any.parcelas || 1
@@ -896,6 +982,200 @@ function resetAll(){
   render();
 }
 
+/* ==========================
+   IA + Fechar mês
+   ========================== */
+function isMonthClosed(ym){
+  return !!state.mesesFechados?.[ym];
+}
+
+function getMonthBase(ym){
+  if(isMonthClosed(ym)){
+    return state.mesesFechados[ym].snapshot;
+  }
+  const t = totalsForMonth(ym);
+  const spend = spendingByCategory(ym);
+  return {
+    ym,
+    salario: Number(state.salario||0),
+    entradas: t.entradas,
+    saidas: t.saidas,
+    fixosTotal: t.fixosTotal,
+    cartaoTotal: t.cartaoTotal,
+    comprometido: t.comprometido,
+    sobrando: t.sobrando,
+    spendByCat: spend
+  };
+}
+
+function avgByCategory(lastN = 3){
+  const months = getMonthOptions().slice(-lastN);
+  const map = {};
+  const count = {};
+
+  for(const ym of months){
+    const base = getMonthBase(ym);
+    const spend = base.spendByCat || {};
+    for(const [cat,val] of Object.entries(spend)){
+      map[cat] = (map[cat]||0) + Number(val||0);
+      count[cat] = (count[cat]||0) + 1;
+    }
+  }
+  const avg = {};
+  for(const cat of Object.keys(map)){
+    avg[cat] = map[cat] / (count[cat]||1);
+  }
+  state.categorias.forEach(c=>{ if(avg[c]==null) avg[c]=0; });
+  return avg;
+}
+
+function aiCompute(ym){
+  const base = getMonthBase(ym);
+
+  const disponivel = Number(base.sobrando || 0);
+  const metaMin = Number(state.ia?.metaMin ?? 1500);
+  const metaMax = Number(state.ia?.metaMax ?? 2000);
+  const margem = Number(state.ia?.margemSeguranca ?? 150);
+
+  // recomendação flexível (Tranquilo / Forte) baseada no que sobrou
+  const tRaw = Math.round(disponivel * 0.45);
+  const fRaw = Math.round(disponivel * 0.65);
+
+  const guardarTranquilo = clamp(tRaw, 0, disponivel);
+  const guardarForte = clamp(fRaw, 0, disponivel);
+
+  // puxa pro range quando der, sem travar quando não der
+  const tranquilo = (disponivel >= metaMin) ? clamp(guardarTranquilo, metaMin, Math.min(disponivel, metaMax)) : guardarTranquilo;
+  const forte = (disponivel >= metaMax) ? metaMax : clamp(Math.max(tranquilo, guardarForte), 0, disponivel);
+
+  const modo = state.ia?.ultModo || "tranquilo";
+  const chosen = modo === "forte" ? forte : tranquilo;
+  const limiteSeguroCartao = Math.max(0, disponivel - chosen - margem);
+
+  // vazamentos: acima do limite ou acima da média (últimos 3 meses)
+  const spend = base.spendByCat || {};
+  const avg = avgByCategory(3);
+
+  const cuts = [];
+  for(const cat of state.categorias){
+    const gasto = Number(spend[cat]||0);
+    const lim = Number(state.orcamento?.[cat]||0);
+    const media = Number(avg[cat]||0);
+
+    if(lim > 0 && gasto > lim){
+      cuts.push({cat, motivo:"acima do limite", excesso: gasto - lim});
+      continue;
+    }
+    const diff = gasto - media;
+    if(diff > 80){
+      cuts.push({cat, motivo:"acima da média", excesso: diff});
+    }
+  }
+  cuts.sort((a,b)=>b.excesso-a.excesso);
+
+  return {
+    ym, base, disponivel,
+    tranquilo, forte,
+    limiteSeguroCartao, margem,
+    cuts: cuts.slice(0,3),
+    metaMin, metaMax
+  };
+}
+
+function aiText(rel){
+  const {disponivel, tranquilo, forte, limiteSeguroCartao, cuts, metaMin, metaMax} = rel;
+
+  const status = disponivel < 0
+    ? "⚠️ Você fechou o mês no negativo. Ajuste cartão/fixos/saídas."
+    : "✅ Mês ok. Agora é escolher o ritmo e guardar bem.";
+
+  const tSub = disponivel >= metaMin
+    ? `Dentro da sua meta flexível (${money(metaMin)}–${money(metaMax)}), sem sufocar.`
+    : `Este mês não deu pra bater a meta desejada, então o “Tranquilo” fica no realista.`;
+
+  const fSub = disponivel >= metaMax
+    ? `Acelera suas metas com força (sem quebrar).`
+    : `Forte fica limitado pelo que realmente sobrou.`;
+
+  let cutsTxt = "Sem grandes vazamentos detectados. Continue assim.";
+  if(cuts.length){
+    cutsTxt = cuts.map(c=>`• ${c.cat}: ${c.motivo} (amenizar ~${money(c.excesso)} já ajuda).`).join("<br/>");
+  }
+
+  return {status, tSub, fSub, cutsTxt};
+}
+
+function openAIReport(){
+  const rel = aiCompute(selectedMonth);
+  const txt = aiText(rel);
+
+  modalTitle.textContent = `🤖 Assistente • ${monthLabel(selectedMonth)} ${isMonthClosed(selectedMonth) ? "(Fechado)" : "(Aberto)"}`;
+  hideAllForms();
+  formAI.style.display = "block";
+
+  document.getElementById("aiSub").innerHTML = txt.status;
+
+  document.getElementById("aiDisponivel").innerHTML =
+    `<span class="${rel.disponivel>=0?'good':'bad'}">${money(rel.disponivel)}</span>`;
+
+  document.getElementById("aiLimiteCartao").innerHTML =
+    `<span class="${rel.limiteSeguroCartao>0?'good':'warn'}">${money(rel.limiteSeguroCartao)}</span>`;
+
+  document.getElementById("aiSaveT").innerHTML = `<span class="good">${money(rel.tranquilo)}</span>`;
+  document.getElementById("aiSaveF").innerHTML = `<span class="good">${money(rel.forte)}</span>`;
+  document.getElementById("aiSaveTSub").innerHTML = txt.tSub;
+  document.getElementById("aiSaveFSub").innerHTML = txt.fSub;
+
+  document.getElementById("aiCuts").innerHTML = txt.cutsTxt;
+
+  modal.style.display = "flex";
+}
+
+function closeMonth(){
+  const ym = selectedMonth;
+
+  if(isMonthClosed(ym)){
+    alert("Esse mês já está fechado.");
+    return;
+  }
+  if(!confirm(`Fechar o mês ${monthLabel(ym)}? Isso cria um histórico fixo.`)) return;
+
+  const rel = aiCompute(ym);
+  const txt = aiText(rel);
+
+  if(!state.mesesFechados) state.mesesFechados = {};
+
+  state.mesesFechados[ym] = {
+    closedAt: new Date().toISOString(),
+    snapshot: {
+      ym,
+      salario: Number(state.salario||0),
+      entradas: rel.base.entradas,
+      saidas: rel.base.saidas,
+      fixosTotal: rel.base.fixosTotal,
+      cartaoTotal: rel.base.cartaoTotal,
+      comprometido: rel.base.comprometido,
+      sobrando: rel.base.sobrando,
+      spendByCat: rel.base.spendByCat
+    },
+    relatorio: {
+      disponivel: rel.disponivel,
+      tranquilo: rel.tranquilo,
+      forte: rel.forte,
+      limiteSeguroCartao: rel.limiteSeguroCartao,
+      metaMin: rel.metaMin,
+      metaMax: rel.metaMax,
+      margem: rel.margem,
+      cuts: rel.cuts,
+      texto: txt
+    }
+  };
+
+  save();
+  render();
+  openAIReport();
+}
+
 /* ===== Render ===== */
 function renderTop(){
   const months = getMonthOptions();
@@ -909,6 +1189,11 @@ function renderTop(){
   sel.onchange = (e)=>{
     selectedMonth = e.target.value;
     localStorage.setItem(KEY+"_month", selectedMonth);
+
+    // atualizar label do "forçar mês" se o modal estiver aberto
+    const lbl = document.getElementById("forceMonthLabel");
+    if(lbl) lbl.textContent = monthLabel(selectedMonth);
+
     render();
   };
 
@@ -938,6 +1223,7 @@ function renderOverview(){
 
   const entries = Object.entries(spend).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
+  // dica simples
   let tip = "Cadastre metas (PC/carro/reserva) pra o sistema calcular o prazo.";
   if(state.metas.length){
     const g = state.metas[0];
@@ -946,6 +1232,10 @@ function renderOverview(){
     else if(m == null) tip = `Sem sobra no mês agora. Ajuste orçamento/contas/cartão.`;
     else tip = `No ritmo atual, você conclui "${g.nome}" em ~${m} mês(es).`;
   }
+
+  const rel = aiCompute(selectedMonth);
+  const txt = aiText(rel);
+  const fechado = isMonthClosed(selectedMonth);
 
   overview.innerHTML = `
     <div class="grid">
@@ -1010,6 +1300,39 @@ function renderOverview(){
         <div style="margin-top:12px" class="split">
           <button class="btnGood" onclick="openModal('goal')">+ Meta</button>
           <button onclick="openModal('fixed')">+ Conta fixa</button>
+        </div>
+      </div>
+
+      <!-- IA CARD -->
+      <div class="card span12">
+        <div class="split">
+          <div>
+            <h3 class="title" style="margin:0">🤖 Assistente Financeiro ${fechado ? "• (Mês fechado)" : ""}</h3>
+            <div class="sub" style="margin-top:6px">${txt.status}</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btnGhost" onclick="openAIReport()">Analisar mês</button>
+            ${fechado ? "" : `<button class="btnWarn" onclick="closeMonth()">Fechar mês</button>`}
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:12px">
+          <div class="card span4" style="box-shadow:none">
+            <div class="label">Disponível real (antes de guardar)</div>
+            <div class="value ${rel.disponivel>=0?'good':'bad'}">${money(rel.disponivel)}</div>
+          </div>
+
+          <div class="card span4" style="box-shadow:none">
+            <div class="label">Guardar (Tranquilo)</div>
+            <div class="value good">${money(rel.tranquilo)}</div>
+            <div class="sub">${txt.tSub}</div>
+          </div>
+
+          <div class="card span4" style="box-shadow:none">
+            <div class="label">Limite seguro no cartão</div>
+            <div class="value ${rel.limiteSeguroCartao>0?'good':'warn'}">${money(rel.limiteSeguroCartao)}</div>
+            <div class="sub">Considera meta + margem</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1144,14 +1467,11 @@ function renderCards(){
   const totalMes = sum(list);
   const groups = getCardGroupsForMonth(selectedMonth);
 
-  const fechamento = state.cartaoCfg?.fechamentoDia || 20;
-  const venc = state.cartaoCfg?.vencimentoDia || 5;
-
   cards.innerHTML = `
     <div class="split" style="margin-bottom:12px">
       <div>
         <h2 class="title" style="margin:0">Cartão / Fatura</h2>
-        <div class="sub">Fechamento dia ${fechamento} • Vencimento dia ${venc} • Editar/excluir por compra.</div>
+        <div class="sub">Fatura do mês com parcelas. Você pode editar ou excluir a compra inteira.</div>
       </div>
       <button class="btnPrimary" onclick="openModal('tx', {tipo:'cartao', meio:'Crédito', parcelas:1})">+ Compra no cartão</button>
     </div>
@@ -1264,6 +1584,14 @@ function renderTx(){
 function render(){
   renderTop();
 
+  // se mês já estiver fechado, desabilita o botão “Fechar mês” (visual)
+  const closeBtn = Array.from(document.querySelectorAll("button")).find(b => (b.textContent||"").includes("Fechar mês"));
+  if(closeBtn){
+    closeBtn.disabled = isMonthClosed(selectedMonth);
+    closeBtn.style.opacity = closeBtn.disabled ? 0.5 : 1;
+    closeBtn.style.cursor = closeBtn.disabled ? "not-allowed" : "pointer";
+  }
+
   if(view==="overview") renderOverview();
   if(view==="goals") renderGoals();
   if(view==="budget") renderBudget();
@@ -1271,21 +1599,6 @@ function render(){
   if(view==="cards") renderCards();
   if(view==="tx") renderTx();
 }
-
-/* ==========================
-   ✅ Migração (1x): preenche faturaMes em dados antigos
-   ========================== */
-(function migrateFaturaMes(){
-  let changed = false;
-  for(const p of state.cartao){
-    if(!p.faturaMes){
-      const dateStr = (p.mes && String(p.mes).includes("-")) ? `${normalizeYM(p.mes)}-01` : new Date().toISOString().slice(0,10);
-      p.faturaMes = faturaMesByDate(dateStr);
-      changed = true;
-    }
-  }
-  if(changed) save();
-})();
 
 /* init */
 render();
