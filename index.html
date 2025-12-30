@@ -527,7 +527,13 @@ function getMonthOptions(){
   state.tx.forEach(t=> set.add(t.mes || ymFromDate(t.data)));
   state.cartao.forEach(p=> set.add(normalizeYM(p.mes)));
   Object.keys(state.mesesFechados || {}).forEach(m=> set.add(m));
-  return Array.from(set).filter(Boolean).sort();
+
+  return Array.from(set)
+    .filter(Boolean)
+    .map(normalizeYM)
+    .filter(m => m !== "2025-12") // ✅ remove Dezembro/2025 do seletor
+    .sort();
+}
 }
 function monthTx(ym){ return state.tx.filter(t => (t.mes || ymFromDate(t.data)) === ym); }
 function monthCard(ym){ return state.cartao.filter(p => normalizeYM(p.mes) === ym); }
